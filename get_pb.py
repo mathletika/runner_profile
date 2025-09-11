@@ -10,6 +10,7 @@ import pandas as pd
 def _make_driver():
     """Headless Chromium driver Streamlit Cloudhoz"""
     options = Options()
+    options.binary_location = "/usr/bin/chromium"
     options.add_argument("--headless=new")
     options.add_argument("--disable-gpu")
     options.add_argument("--no-sandbox")
