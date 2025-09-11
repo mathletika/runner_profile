@@ -9,14 +9,33 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
 
+def _debug_paths():
+    """Debug: írja ki a fontos könyvtárak tartalmát a logba."""
+    for folder in ["/usr/bin", "/usr/lib", "/usr/lib/chromium", "/usr/lib/chromium-browser"]:
+        if os.path.exists(folder):
+            print(f"=== Tartalom {folder} ===")
+            try:
+                print(os.listdir(folder))
+            except Exception as e:
+                print(f"Hiba a listázásnál: {e}")
+
+
 def _make_driver():
     """Headless Chromium driver a Streamlit Cloudhoz, több lehetséges bináris- és driver path kezelésével."""
+    _debug_paths()  # <<< kiíratjuk a könyvtárak tartalmát a logba
+
     options = Options()
 
     # Keressük a chromium binárist
-    for binary in ["/usr/bin/chromium", "/usr/bin/chromium-browser"]:
+    for binary in [
+        "/usr/bin/chromium",
+        "/usr/bin/chromium-browser",
+        "/usr/lib/chromium/chromium",
+        "/usr/lib/chromium-browser/chromium-browser"
+    ]:
         if os.path.exists(binary):
             options.binary_location = binary
+            print(f"Használt Chromium bináris: {binary}")
             break
 
     options.add_argument("--headless=new")
@@ -40,6 +59,7 @@ def _make_driver():
 
     for path in possible_paths:
         if os.path.exists(path):
+            print(f"Használt ChromeDriver: {path}")
             return webdriver.Chrome(service=Service(path), options=options)
 
     raise RuntimeError(f"Nem található a ChromeDriver. Próbált pathok: {possible_paths}")
