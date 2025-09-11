@@ -8,11 +8,12 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
+
 def _make_driver():
-    """Headless Chromium driver a Streamlit Cloudhoz, több lehetséges bináris és driver path kezelésével."""
+    """Headless Chromium driver a Streamlit Cloudhoz, több lehetséges bináris- és driver path kezelésével."""
     options = Options()
 
-    # Próbáljuk megtalálni a Chromium binárist
+    # Keressük a chromium binárist
     for binary in ["/usr/bin/chromium", "/usr/bin/chromium-browser"]:
         if os.path.exists(binary):
             options.binary_location = binary
@@ -30,12 +31,19 @@ def _make_driver():
         "Chrome/120.0.0.0 Safari/537.36"
     )
 
-    # Lehetséges driver path-ok
-    for path in ["/usr/bin/chromedriver", "/usr/lib/chromium-browser/chromedriver"]:
+    # Lehetséges driver helyek
+    possible_paths = [
+        "/usr/bin/chromedriver",
+        "/usr/lib/chromium-browser/chromedriver",
+        "/usr/lib/chromium/chromedriver"
+    ]
+
+    for path in possible_paths:
         if os.path.exists(path):
             return webdriver.Chrome(service=Service(path), options=options)
 
-    raise RuntimeError("Nem található a ChromeDriver bináris.")
+    raise RuntimeError(f"Nem található a ChromeDriver. Próbált pathok: {possible_paths}")
+
 
 def scrape_world_athletics_pbs(url: str, wait_sec: int = 45):
     """
