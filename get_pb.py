@@ -9,10 +9,10 @@ from selenium.webdriver.support import expected_conditions as EC
 
 
 def _make_driver():
-    """Headless Chromium driver a Streamlit Cloudhoz (fix path-okkal)."""
+    """Headless Chromium driver a Streamlit Cloudhoz (fix path-okkal, old headless móddal)."""
     options = Options()
-    options.binary_location = "/usr/bin/chromium"  # Debian bullseye csomag
-    options.add_argument("--headless=new")
+    options.binary_location = "/usr/bin/chromium"  # Debian bullseye alatt
+    options.add_argument("--headless=old")  # <<< stabilabb headless mód
     options.add_argument("--disable-gpu")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
@@ -60,13 +60,19 @@ def scrape_world_athletics_pbs(url: str, wait_sec: int = 45):
         ).click()
 
         # Várjuk a táblát
-        table = WebDriverWait(driver, 20).until(
-            EC.presence_of_element_located((
-                By.XPATH,
-                "(//h2[contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz'),'personal best')]/following::table)[1]"
-                " | //table[.//th[normalize-space()='Discipline'] and .//th[contains(.,'Performance')]]"
-            ))
-        )
+        try:
+            table = WebDriverWait(driver, 20).until(
+                EC.presence_of_element_located((
+                    By.XPATH,
+                    "(//h2[contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz'),'personal best')]/following::table)[1]"
+                    " | //table[.//th[normalize-space()='Discipline'] and .//th[contains(.,'Performance')]]"
+                ))
+            )
+        except Exception:
+            # Debug HTML kinyomtatása a logba
+            print("DEBUG: Az oldal első 2000 karaktere:\n")
+            print(driver.page_source[:2000])
+            raise
 
         rows_out = []
         rows = table.find_elements(By.XPATH, ".//tr")
