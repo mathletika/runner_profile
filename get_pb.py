@@ -1,5 +1,4 @@
 # get_pb.py
-import os
 import pandas as pd
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
@@ -9,35 +8,10 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
 
-def _debug_paths():
-    """Debug: írja ki a fontos könyvtárak tartalmát a logba."""
-    for folder in ["/usr/bin", "/usr/lib", "/usr/lib/chromium", "/usr/lib/chromium-browser"]:
-        if os.path.exists(folder):
-            print(f"=== Tartalom {folder} ===")
-            try:
-                print(os.listdir(folder))
-            except Exception as e:
-                print(f"Hiba a listázásnál: {e}")
-
-
 def _make_driver():
-    """Headless Chromium driver a Streamlit Cloudhoz, több lehetséges bináris- és driver path kezelésével."""
-    _debug_paths()  # <<< kiíratjuk a könyvtárak tartalmát a logba
-
+    """Headless Chromium driver a Streamlit Cloudhoz (fix path-okkal)."""
     options = Options()
-
-    # Keressük a chromium binárist
-    for binary in [
-        "/usr/bin/chromium",
-        "/usr/bin/chromium-browser",
-        "/usr/lib/chromium/chromium",
-        "/usr/lib/chromium-browser/chromium-browser"
-    ]:
-        if os.path.exists(binary):
-            options.binary_location = binary
-            print(f"Használt Chromium bináris: {binary}")
-            break
-
+    options.binary_location = "/usr/bin/chromium-browser"  # <<< Chromium helye
     options.add_argument("--headless=new")
     options.add_argument("--disable-gpu")
     options.add_argument("--no-sandbox")
@@ -50,19 +24,8 @@ def _make_driver():
         "Chrome/120.0.0.0 Safari/537.36"
     )
 
-    # Lehetséges driver helyek
-    possible_paths = [
-        "/usr/bin/chromedriver",
-        "/usr/lib/chromium-browser/chromedriver",
-        "/usr/lib/chromium/chromedriver"
-    ]
-
-    for path in possible_paths:
-        if os.path.exists(path):
-            print(f"Használt ChromeDriver: {path}")
-            return webdriver.Chrome(service=Service(path), options=options)
-
-    raise RuntimeError(f"Nem található a ChromeDriver. Próbált pathok: {possible_paths}")
+    driver_path = "/usr/lib/chromium-browser/chromedriver"  # <<< Driver helye
+    return webdriver.Chrome(service=Service(driver_path), options=options)
 
 
 def scrape_world_athletics_pbs(url: str, wait_sec: int = 45):
