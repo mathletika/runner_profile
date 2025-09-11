@@ -11,7 +11,7 @@ from selenium.webdriver.support import expected_conditions as EC
 def _make_driver():
     """Headless Chromium driver a Streamlit Cloudhoz (fix path-okkal)."""
     options = Options()
-    options.binary_location = "/usr/bin/chromium-browser"  # <<< Chromium helye
+    options.binary_location = "/usr/bin/chromium-browser"  # Chromium bináris
     options.add_argument("--headless=new")
     options.add_argument("--disable-gpu")
     options.add_argument("--no-sandbox")
@@ -24,7 +24,8 @@ def _make_driver():
         "Chrome/120.0.0.0 Safari/537.36"
     )
 
-    driver_path = "/usr/lib/chromium-browser/chromedriver"  # <<< Driver helye
+    # ChromeDriver fix path
+    driver_path = "/usr/lib/chromium-browser/chromedriver"
     return webdriver.Chrome(service=Service(driver_path), options=options)
 
 
@@ -45,12 +46,12 @@ def scrape_world_athletics_pbs(url: str, wait_sec: int = 45):
 
         # Navigáció: STATISTICS fül
         WebDriverWait(driver, 15).until(
-            EC.element_to_be_clickable((By.XPATH, "//button[@value='STATISTICS']"))
+            EC.element_to_be_clickable((By.XPATH, "//a[contains(.,'Statistics')] | //button[contains(.,'Statistics')]"))
         ).click()
 
         # Navigáció: Personal bests tab
         WebDriverWait(driver, 15).until(
-            EC.element_to_be_clickable((By.XPATH, "//button[@value='Personal bests']"))
+            EC.element_to_be_clickable((By.XPATH, "//a[contains(.,'Personal Best')] | //button[contains(.,'Personal Best')]"))
         ).click()
 
         # Várjuk a táblát
