@@ -1,3 +1,6 @@
-flask
+streamlit
 selenium
+webdriver-manager
 pandas
+lxml
+chromedriver-autoinstaller
