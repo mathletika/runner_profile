@@ -1,5 +1,5 @@
-chromium-browser
-chromium-chromedriver
+chromium
+chromium-driver
 libx11-6
 libx11-xcb1
 libxcb1

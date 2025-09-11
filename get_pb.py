@@ -9,9 +9,8 @@ from selenium.webdriver.support import expected_conditions as EC
 
 
 def _make_driver():
-    """Headless Chromium driver a Streamlit Cloudhoz (fix path-okkal)."""
     options = Options()
-    options.binary_location = "/usr/bin/chromium-browser"  # Chromium bináris
+    options.binary_location = "/usr/bin/chromium"
     options.add_argument("--headless=new")
     options.add_argument("--disable-gpu")
     options.add_argument("--no-sandbox")
@@ -24,9 +23,9 @@ def _make_driver():
         "Chrome/120.0.0.0 Safari/537.36"
     )
 
-    # ChromeDriver fix path
-    driver_path = "/usr/lib/chromium-browser/chromedriver"
+    driver_path = "/usr/bin/chromedriver"
     return webdriver.Chrome(service=Service(driver_path), options=options)
+
 
 
 def scrape_world_athletics_pbs(url: str, wait_sec: int = 45):
