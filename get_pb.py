@@ -9,8 +9,9 @@ from selenium.webdriver.support import expected_conditions as EC
 
 
 def _make_driver():
+    """Headless Chromium driver a Streamlit Cloudhoz (fix path-okkal)."""
     options = Options()
-    options.binary_location = "/usr/bin/chromium"
+    options.binary_location = "/usr/bin/chromium"  # Debian bullseye csomag
     options.add_argument("--headless=new")
     options.add_argument("--disable-gpu")
     options.add_argument("--no-sandbox")
@@ -25,7 +26,6 @@ def _make_driver():
 
     driver_path = "/usr/bin/chromedriver"
     return webdriver.Chrome(service=Service(driver_path), options=options)
-
 
 
 def scrape_world_athletics_pbs(url: str, wait_sec: int = 45):
@@ -43,32 +43,36 @@ def scrape_world_athletics_pbs(url: str, wait_sec: int = 45):
             EC.presence_of_element_located((By.TAG_NAME, "body"))
         )
 
-        # Navigáció: STATISTICS fül
+        # Navigáció: STATISTICS fül (a vagy button)
         WebDriverWait(driver, 15).until(
-            EC.element_to_be_clickable((By.XPATH, "//a[contains(.,'Statistics')] | //button[contains(.,'Statistics')]"))
+            EC.element_to_be_clickable((
+                By.XPATH,
+                "//a[contains(.,'Statistics')] | //button[contains(.,'Statistics')]"
+            ))
         ).click()
 
-        # Navigáció: Personal bests tab
+        # Navigáció: Personal bests tab (a vagy button)
         WebDriverWait(driver, 15).until(
-            EC.element_to_be_clickable((By.XPATH, "//a[contains(.,'Personal Best')] | //button[contains(.,'Personal Best')]"))
+            EC.element_to_be_clickable((
+                By.XPATH,
+                "//a[contains(.,'Personal Best')] | //button[contains(.,'Personal Best')]"
+            ))
         ).click()
 
         # Várjuk a táblát
-        WebDriverWait(driver, 20).until(
-            EC.presence_of_element_located((By.TAG_NAME, "table"))
+        table = WebDriverWait(driver, 20).until(
+            EC.presence_of_element_located((
+                By.XPATH,
+                "(//h2[contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz'),'personal best')]/following::table)[1]"
+                " | //table[.//th[normalize-space()='Discipline'] and .//th[contains(.,'Performance')]]"
+            ))
         )
-        tables = driver.find_elements(By.TAG_NAME, "table")
+
         rows_out = []
-
-        for tbl in tables:
-            rows = tbl.find_elements(By.TAG_NAME, "tr")
-            if not rows or len(rows) < 2:
-                continue
-
+        rows = table.find_elements(By.XPATH, ".//tr")
+        if len(rows) > 1:
             headers = [th.text.strip() for th in rows[0].find_elements(By.TAG_NAME, "th")]
-            body_rows = rows[1:]
-
-            for r in body_rows:
+            for r in rows[1:]:
                 tds = r.find_elements(By.TAG_NAME, "td")
                 if len(tds) < 2:
                     continue
@@ -77,7 +81,6 @@ def scrape_world_athletics_pbs(url: str, wait_sec: int = 45):
                 date = None
                 score = None
 
-                # dátum keresés
                 if len(tds) >= 4:
                     maybe_date = tds[3].text.strip()
                     date = maybe_date if any(ch.isdigit() for ch in maybe_date) else None
@@ -85,7 +88,6 @@ def scrape_world_athletics_pbs(url: str, wait_sec: int = 45):
                     maybe_date = tds[2].text.strip()
                     date = maybe_date if any(ch.isdigit() for ch in maybe_date) else None
 
-                # Score oszlop, ha van
                 headers_lower = [h.lower() for h in headers]
                 if "score" in headers_lower:
                     try:
@@ -102,9 +104,6 @@ def scrape_world_athletics_pbs(url: str, wait_sec: int = 45):
                         "Date": date,
                         "Score": score
                     })
-
-            if rows_out:
-                break
 
         if not rows_out:
             return []
