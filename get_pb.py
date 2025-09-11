@@ -1,25 +1,14 @@
 # get_pb.py
-import chromedriver_autoinstaller
 from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import pandas as pd
 
-# Automatikus ChromeDriver letöltés/telepítés
-chromedriver_autoinstaller.install()
-
-def scrape_world_athletics_pbs(url: str, wait_sec: int = 45):
-    """
-    Bemenet: WA profil URL
-    Kimenet: list[dict] a kulcsokkal: Discipline, Performance, Date (YYYY-MM-DD vagy None), Score (vagy None)
-    Csak a Statistics -> Personal Bests fülről olvas.
-    """
-    if not isinstance(url, str) or not url.strip():
-        return []
-
-    # ---- Chrome headless beállítások
+def _make_driver():
+    """Headless Chromium driver Streamlit Cloudhoz"""
     options = Options()
     options.add_argument("--headless=new")
     options.add_argument("--disable-gpu")
@@ -28,29 +17,41 @@ def scrape_world_athletics_pbs(url: str, wait_sec: int = 45):
     options.add_argument("--window-size=1366,900")
     options.add_argument("--lang=en-US")
     options.add_argument(
-        "--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-        "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        "--user-agent=Mozilla/5.0 (X11; Linux x86_64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/120.0.0.0 Safari/537.36"
     )
+    return webdriver.Chrome(service=Service("/usr/bin/chromedriver"), options=options)
 
-    driver = webdriver.Chrome(options=options)
+def scrape_world_athletics_pbs(url: str, wait_sec: int = 45):
+    """
+    WA profil Personal Bests fül scraping.
+    Visszatérés: list[dict] kulcsokkal: Discipline, Performance, Date, Score
+    """
+    if not isinstance(url, str) or not url.strip():
+        return []
 
+    driver = _make_driver()
     try:
-        # ---- Oldal betöltés
         driver.get(url)
-        WebDriverWait(driver, wait_sec).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
+        WebDriverWait(driver, wait_sec).until(
+            EC.presence_of_element_located((By.TAG_NAME, "body"))
+        )
 
-        # ---- STATISTICS fül
+        # Navigáció: STATISTICS fül
         WebDriverWait(driver, 15).until(
             EC.element_to_be_clickable((By.XPATH, "//button[@value='STATISTICS']"))
         ).click()
 
-        # ---- Personal bests tab
+        # Navigáció: Personal bests tab
         WebDriverWait(driver, 15).until(
             EC.element_to_be_clickable((By.XPATH, "//button[@value='Personal bests']"))
         ).click()
 
-        # ---- Táblázat megvárása
-        WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.TAG_NAME, "table")))
+        # Várjuk a táblát
+        WebDriverWait(driver, 20).until(
+            EC.presence_of_element_located((By.TAG_NAME, "table"))
+        )
         tables = driver.find_elements(By.TAG_NAME, "table")
         rows_out = []
 
@@ -79,7 +80,7 @@ def scrape_world_athletics_pbs(url: str, wait_sec: int = 45):
                     maybe_date = tds[2].text.strip()
                     date = maybe_date if any(ch.isdigit() for ch in maybe_date) else None
 
-                # Score, ha van
+                # Score oszlop, ha van
                 headers_lower = [h.lower() for h in headers]
                 if "score" in headers_lower:
                     try:
@@ -103,27 +104,22 @@ def scrape_world_athletics_pbs(url: str, wait_sec: int = 45):
         if not rows_out:
             return []
 
-        # ---- Tisztítás és normalizálás
+        # ---- Normalizálás Pandas-szal
         df = pd.DataFrame(rows_out)
-
-        # biztos oszlopok
         for c in ["Discipline", "Performance", "Date", "Score"]:
             if c not in df.columns:
                 df[c] = None
 
-        # Eredmény formázás: vessző -> pont
         df["Performance"] = df["Performance"].astype(str).str.replace(",", ".", regex=False)
 
-        # Dátum ISO
         def _to_iso(x):
             try:
                 d = pd.to_datetime(x, errors="coerce")
                 return d.date().isoformat() if pd.notna(d) else None
             except Exception:
                 return None
-        df["Date"] = df["Date"].apply(_to_iso)
 
-        # Üres sorok kiszűrése
+        df["Date"] = df["Date"].apply(_to_iso)
         df = df[~df["Discipline"].isna() & df["Performance"].astype(str).str.len().gt(0)]
 
         return df.to_dict(orient="records")
