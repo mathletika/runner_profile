@@ -84,6 +84,13 @@ def seconds_to_hms(sec: float) -> str:
     s = int(round(sec % 60))
     return f"{h}:{m:02d}:{s:02d}"
 
+def seconds_to_mmss_per_km(sec_per_km: float) -> str:
+    if not np.isfinite(sec_per_km) or sec_per_km <= 0:
+        return "-"
+    m = int(sec_per_km // 60)
+    s = int(round(sec_per_km - m * 60))
+    return f"{m}:{s:02d}/km"
+
 # -------------------- Kártyás választó --------------------
 def result_cards_selector(df, key_prefix, max_select=None, ncols=8):
     selected = []
@@ -115,7 +122,83 @@ gender = st.session_state.get("gender", "Man")
 tab1, tab2, tab3 = st.tabs(["🏁 Kritikus Sebesség", "📐 Riegel exponens", "🏅 WA Score"])
 
 # ===========================================================
-#                           WA SCORE
+#                 KRITIKUS SEBESSÉG (meghagyva)
+# ===========================================================
+with tab1:
+    st.subheader("Kritikus Sebesség (CS)")
+    st.info("**Ajánlás:** 3–20 perc közötti idők használata. **Max. 3** idő jelölhető ki.")
+
+    sel = result_cards_selector(idok, "cs", max_select=3, ncols=8)
+    use = idok.loc[sel].copy()
+    if len(use) >= 2:
+        use["m"] = use["Versenyszám"].map(EVENT_TO_METERS)
+        use["s"] = use["Idő"].apply(time_to_seconds)
+        x = use["s"].values; y = use["m"].values
+        A = np.vstack([x, np.ones_like(x)]).T
+        cs, dprime = np.linalg.lstsq(A, y, rcond=None)[0]
+        pace = 1000.0 / cs
+
+        st.markdown(
+            f"""
+            <div style="background:#d1fae5;padding:10px 12px;border-radius:8px;display:flex;align-items:center;gap:14px;">
+              <div style="font-size:18px;font-weight:700;">🔥 Kritikus tempó:</div>
+              <div style="font-size:20px;font-weight:800;">{seconds_to_mmss_per_km(pace)}</div>
+              <div style="margin-left:auto;font-size:12px;opacity:0.85;">
+                CS: {cs:.2f} m/s &nbsp; • &nbsp; D′: {dprime:.0f} m
+              </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+        xs = np.linspace(x.min() * 0.9, x.max() * 1.1, 100)
+        ys = cs * xs + dprime
+        fig, ax = plt.subplots(figsize=(3.6, 2.6), dpi=120)
+        ax.scatter(x, y, s=12); ax.plot(xs, ys, linewidth=1.2)
+        ax.set_xlabel("Idő (s)", fontsize=9); ax.set_ylabel("Táv (m)", fontsize=9)
+        ax.tick_params(axis="both", labelsize=8)
+        st.pyplot(fig, use_container_width=False)
+
+# ===========================================================
+#                 RIEGEL EXPONENS (meghagyva)
+# ===========================================================
+with tab2:
+    st.subheader("Riegel exponens")
+    st.info("**Ajánlás:** válassz két eredményt (a cél versenytávhoz minél közelebbi számok), majd add meg a cél versenyszámot.")
+
+    sel = result_cards_selector(idok, "riegel", max_select=2, ncols=8)
+    target = st.selectbox("Cél versenyszám", EVENT_OPTIONS, key="riegel_target_select")
+
+    if len(sel) == 2:
+        df = idok.loc[sel].copy()
+        df["m"] = df["Versenyszám"].map(EVENT_TO_METERS)
+        df["s"] = df["Idő"].apply(time_to_seconds)
+        d1, t1 = float(df.iloc[0]["m"]), float(df.iloc[0]["s"])
+        d2, t2 = float(df.iloc[1]["m"]), float(df.iloc[1]["s"])
+        k = math.log(t2 / t1) / math.log(d2 / d1) if d1 != d2 else None
+        if k:
+            d_target = EVENT_TO_METERS[target]
+            ref = (d1, t1) if abs(d_target - d1) < abs(d_target - d2) else (d2, t2)
+            t_pred = ref[1] * (d_target / ref[0]) ** k
+            if t_pred:
+                pretty = seconds_to_hms(t_pred) if t_pred >= 3600 else seconds_to_mmss(t_pred)
+                st.success(f"**Várható idő** {target}: **{pretty}**")
+
+            st.markdown(
+                f"""
+                <div style="border-left:4px solid #3b82f6;background:#eef6ff;padding:10px 12px;border-radius:6px;">
+                  <b>Riegel képletek és számítás:</b><br>
+                  <code>k = ln(T₂/T₁) / ln(D₂/D₁)</code><br>
+                  Behelyettesítve: <code>k = ln({t2:.2f}/{t1:.2f}) / ln({d2:.0f}/{d1:.0f}) = {k:.4f}</code><br><br>
+                  <code>T_target = T_ref × (D_target / D_ref)^k</code><br>
+                  Behelyettesítve: <code>T_target = {ref[1]:.2f} × ({d_target:.0f}/{ref[0]:.0f})^{k:.4f} = {t_pred:.2f} s</code>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+# ===========================================================
+#                 WA SCORE (új kód hozzáadva)
 # ===========================================================
 with tab3:
     st.subheader("WA Score")
