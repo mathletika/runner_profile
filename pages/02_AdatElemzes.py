@@ -135,21 +135,16 @@ with tab3:
 
     wa_df = pd.read_csv(wa_path)
 
-    # idő stringből másodpercek
-    wa_df["result_sec"] = wa_df["result"].apply(lambda x: time_to_seconds(str(x)))
-
-    # egységes pontszám oszlop
+    # konverzió: score -> points, result -> result_sec
     wa_df = wa_df.rename(columns={"score": "points"})
-
+    if "result_sec" not in wa_df.columns:
+        wa_df["result_sec"] = wa_df["result"].apply(lambda x: time_to_seconds(str(x)))
 
     # Segédfüggvény: idő → WA pont
     def wa_points_lookup(g: str, event: str, t_sec: float) -> float | None:
         sub = wa_df[(wa_df["gender"] == g) & (wa_df["discipline"] == event)].copy()
         if sub.empty or not np.isfinite(t_sec):
             return None
-        # ha nincs result_sec, konvertáljuk
-        if "result_sec" not in sub.columns:
-            sub["result_sec"] = sub["result"].apply(lambda x: time_to_seconds(str(x)))
         sub = sub.dropna(subset=["result_sec"])
         sub = sub.sort_values("result_sec")
         idx = np.searchsorted(sub["result_sec"].values, t_sec, side="left")
@@ -213,8 +208,6 @@ with tab3:
         target2 = st.selectbox("Cél versenyszám", EVENT_OPTIONS, key="wa_calc_target")
         sub = wa_df[(wa_df["gender"] == gender) & (wa_df["discipline"] == target2)].copy()
         if not sub.empty:
-            if "result_sec" not in sub.columns:
-                sub["result_sec"] = sub["result"].apply(lambda x: time_to_seconds(str(x)))
             sub = sub.dropna(subset=["result_sec"])
             sub = sub.sort_values("points", ascending=False)
             diffs = (sub["points"] - avg_pts).abs().values
