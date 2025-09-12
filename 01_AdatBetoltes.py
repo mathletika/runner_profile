@@ -2,14 +2,15 @@ import pandas as pd
 import streamlit as st
 
 # Oldal beállítás
-st.set_page_config(page_title="Runner Profile – Adatbetöltés", page_icon="📝", layout="wide")
+st.set_page_config(page_title="Eredmények betöltése", page_icon="📝", layout="wide")
 
 # ====== Állapot inicializálás ======
 if "gender" not in st.session_state:
     st.session_state.gender = "Man"
 
 if "manual_cards" not in st.session_state:
-    st.session_state.manual_cards = [{"Táv":"", "Idő":"", "Használat":True} for _ in range(2)]
+    # Alapból 4 üres kártya
+    st.session_state.manual_cards = [{"Táv":"", "Idő":""} for _ in range(4)]
 
 if "idok" not in st.session_state:
     st.session_state.idok = pd.DataFrame(columns=["Versenyszám","Idő","Gender","Forrás"])
@@ -31,7 +32,15 @@ event_time_formats = {
 EVENT_OPTIONS = list(event_time_formats.keys())
 
 # ====== Fejléc ======
-st.title("📝 Runner Profile – Adatbetöltés (v4)")
+st.markdown(
+    """
+    <div style="background:linear-gradient(90deg,#3d5361,#5d7687);padding:15px;border-radius:8px;margin-bottom:20px;">
+        <h1 style="color:white;margin:0;font-size:1.6rem;">📝 Eredmények betöltése</h1>
+        <p style="color:#f0f0f0;margin:0.2rem 0 0;">Add meg kézzel a versenyeredményeidet, majd nézd meg az elemzést a második oldalon.</p>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
 
 with st.sidebar:
     st.header("Beállítások")
@@ -54,7 +63,6 @@ for i in range(0, len(st.session_state.manual_cards), 4):
                                     index=([""] + EVENT_OPTIONS).index(k["Táv"]) if k["Táv"] in EVENT_OPTIONS else 0,
                                     key=f"manual_tav_{idx}")
             k["Idő"] = st.text_input("Időeredmény", value=k.get("Idő",""), key=f"manual_ido_{idx}")
-            k["Használat"] = st.checkbox("Használat", value=k.get("Használat", True), key=f"manual_use_{idx}")
             if st.button("Eltávolítás", key=f"manual_rm_{idx}"):
                 st.session_state.manual_cards.pop(idx)
                 st.rerun()
@@ -62,13 +70,13 @@ for i in range(0, len(st.session_state.manual_cards), 4):
 c1, c2 = st.columns([1,1])
 with c1:
     if st.button("Új kártya hozzáadása"):
-        st.session_state.manual_cards.append({"Táv":"", "Idő":"", "Használat":True})
+        st.session_state.manual_cards.append({"Táv":"", "Idő":""})
         st.rerun()
 with c2:
     if st.button("Megadott eredmények hozzáadása az IDŐK táblához", type="primary"):
         rows = []
         for k in st.session_state.manual_cards:
-            if k.get("Használat", False) and k.get("Táv") and k.get("Idő"):
+            if k.get("Táv") and k.get("Idő"):
                 rows.append({
                     "Versenyszám": k["Táv"], "Idő": k["Idő"],
                     "Gender": st.session_state.gender, "Forrás":"Manuális"
