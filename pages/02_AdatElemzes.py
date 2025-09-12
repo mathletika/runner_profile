@@ -245,18 +245,23 @@ with tab3:
     work = work.sort_values("WA pont", ascending=False)
 
     # ---- Kártyák boxban ----
-    st.markdown('<div style="padding:8px;border:1px solid #ddd;border-radius:8px;margin-bottom:12px;">', unsafe_allow_html=True)
-    for i in range(0, len(work), 8):
-        cols = st.columns(8, gap="small")
-        for j in range(8):
-            if i + j >= len(work):
-                break
-            row = work.iloc[i + j]
-            with cols[j].container(border=True):
-                st.caption(f"**{row['Versenyszám']}**")
-                st.caption(f"{row['Idő']}")
-                st.markdown(f"<div style='font-weight:700;'>🏅 {int(round(row['WA pont']))} p</div>", unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
+    # ---- Kártyák boxban ----
+    with st.container():
+        st.markdown(
+            '<div style="padding:8px;border:1px solid #ddd;border-radius:8px;margin-bottom:12px;border-radius:8px;">',
+            unsafe_allow_html=True)
+        for i in range(0, len(work), 8):
+            cols = st.columns(8, gap="small")
+            for j in range(8):
+                if i + j >= len(work):
+                    break
+                row = work.iloc[i + j]
+                with cols[j].container(border=True):
+                    st.markdown(
+                        f"<div style='font-size:12px;'>{row['Versenyszám']} — {row['Idő']} — 🏅 {int(round(row['WA pont']))} p</div>",
+                        unsafe_allow_html=True,
+                    )
+        st.markdown('</div>', unsafe_allow_html=True)
 
     # ---- Összegzés emojikkal ----
     if not work.empty:
@@ -272,6 +277,7 @@ with tab3:
         )
 
     st.divider()
+    st.subheader("WA Kalkulátor")
 
     # ---- Kalkulátor ----
     st.markdown(
@@ -280,15 +286,21 @@ with tab3:
         "</div>",
         unsafe_allow_html=True,
     )
+    st.markdown("<br>", unsafe_allow_html=True)
 
     sel_calc = result_cards_selector(work, "wa_calc", max_select=3, ncols=8)
     use_calc = work.loc[sel_calc].copy()
 
+    avg_pts = None
     if len(use_calc) > 0:
         avg_pts = float(use_calc["WA pont"].mean())
         st.markdown(f"**Átlag WA pont:** {int(round(avg_pts))} p")
+    else:
+        st.caption("Nincs kijelölt eredmény, átlag WA pont nem számítható.")
 
-        target2 = st.selectbox("Cél versenyszám", EVENT_OPTIONS, key="wa_calc_target")
+    target2 = st.selectbox("Cél versenyszám", EVENT_OPTIONS, key="wa_calc_target")
+
+    if avg_pts:
         sub = wa_df[(wa_df["gender"] == gender) & (wa_df["discipline"] == target2)].copy()
         if not sub.empty:
             sub = sub.dropna(subset=["result_sec"])
