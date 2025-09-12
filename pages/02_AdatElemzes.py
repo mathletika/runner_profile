@@ -246,22 +246,38 @@ with tab3:
 
     # ---- Kártyák boxban ----
     # ---- Kártyák boxban ----
+    # ---- Kártyák boxban ----
     with st.container():
         st.markdown(
-            '<div style="padding:8px;border:1px solid #ddd;border-radius:8px;margin-bottom:12px;border-radius:8px;">',
-            unsafe_allow_html=True)
+            "<div style='padding:12px;border:1px solid #ddd;border-radius:8px;margin-bottom:12px;'>",
+            unsafe_allow_html=True,
+        )
         for i in range(0, len(work), 8):
             cols = st.columns(8, gap="small")
             for j in range(8):
                 if i + j >= len(work):
                     break
                 row = work.iloc[i + j]
-                with cols[j].container(border=True):
+                with cols[j]:
                     st.markdown(
-                        f"<div style='font-size:12px;'>{row['Versenyszám']} — {row['Idő']} — 🏅 {int(round(row['WA pont']))} p</div>",
+                        f"""
+                        <div style="
+                            background-color:#f9fafb;
+                            border-radius:6px;
+                            padding:12px;
+                            text-align:center;
+                            display:flex;
+                            align-items:center;
+                            justify-content:center;
+                            height:60px;
+                            font-size:13px;
+                            font-weight:500;">
+                            {row['Versenyszám']} ({row['Idő']}): 🏅 {int(round(row['WA pont']))} p
+                        </div>
+                        """,
                         unsafe_allow_html=True,
                     )
-        st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
 
     # ---- Összegzés emojikkal ----
     if not work.empty:
