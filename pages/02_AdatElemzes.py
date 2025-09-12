@@ -1,181 +1,192 @@
-import streamlit as st
+import math
 import pandas as pd
-import numpy as np
-from typing import Optional, Tuple
+import streamlit as st
+import matplotlib.pyplot as plt
 
-st.set_page_config(
-    page_title="Futó teljesítmény – Elemzés",
-    page_icon="📊",
-    layout="wide"
-)
+# ====== Segédfüggvények ======
+def parse_time_to_seconds(time_str: str):
+    """Idő string → másodperc (float)."""
+    if not time_str or str(time_str).strip() == "":
+        return None
+    t = str(time_str).replace(",", ".").strip()
+    parts = t.split(":")
+    if len(parts) == 3:
+        h, m, s = parts
+    elif len(parts) == 2:
+        h, m, s = 0, *parts
+    else:
+        h, m, s = 0, 0, parts[0]
+    try:
+        return int(h) * 3600 + int(m) * 60 + float(s)
+    except Exception:
+        return None
 
-# ====== STÍLUS ======
-st.markdown("""
-<style>
-.section-title{
-  font-weight:700; font-size:1.2rem; margin: 12px 0 8px 0; color: #3d5361;
-  border-left: 6px solid #3d5361; padding-left: 10px;
-}
-.card {
-  background: #f6f7f9; border: 1px solid #dfe3e8; border-radius: 14px;
-  padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.06);
-}
-hr.soft{border: none; border-top: 1px solid #eceff1; margin: 1rem 0;}
-</style>
-""", unsafe_allow_html=True)
 
-st.title("📊 Elemzés")
+def pontkereso(wa_df: pd.DataFrame, gender: str, discipline: str, input_time: str):
+    """
+    Megkeresi a WA táblában a megadott nem + versenyszám kombinációhoz tartozó
+    legközelebbi, de lassabb vagy egyenlő időt, és visszaadja annak pontszámát.
+    """
+    if wa_df is None or wa_df.empty:
+        return None
 
-if "idok" not in st.session_state or st.session_state["idok"].empty:
-    st.warning("Nincs adat a munkamenetben. Menj vissza az Adatbetöltés oldalra!")
-    st.page_link("../streamlit_app.py", label="Vissza az Adatbetöltéshez →", icon="⬅️")
+    input_sec = parse_time_to_seconds(input_time)
+    if input_sec is None:
+        return None
+
+    sub = wa_df[(wa_df["gender"] == gender) & (wa_df["discipline"] == discipline)].copy()
+    if sub.empty:
+        return None
+
+    sub["time_seconds"] = sub["result"].apply(parse_time_to_seconds)
+    sub = sub[sub["time_seconds"] >= input_sec]  # csak lassabb vagy egyenlő idők
+
+    if sub.empty:
+        return None
+
+    # legközelebbi lassabb vagy egyenlő
+    closest = sub.sort_values("time_seconds").iloc[0]
+    return int(closest["score"])
+
+
+def calc_cs_cp(df: pd.DataFrame):
+    """
+    Kritikus sebesség (CS) és D′ számítása.
+    d = CS * t + D′
+    """
+    df = df.dropna(subset=["dist_m","sec"])
+    if len(df) < 2:
+        return None, None
+
+    if len(df) == 2:
+        d1, t1 = df.iloc[0]["dist_m"], df.iloc[0]["sec"]
+        d2, t2 = df.iloc[1]["dist_m"], df.iloc[1]["sec"]
+        if abs(t2 - t1) < 1e-6:
+            return None, None
+        cs = (d2 - d1) / (t2 - t1)
+        dprime = (d1 * t2 - d2 * t1) / (t2 - t1)
+        return (cs if cs > 0 else None), (dprime if dprime > 0 else None)
+
+    # Több pont → OLS regresszió
+    x = df["sec"].values
+    y = df["dist_m"].values
+    n = len(x)
+    sx, sy = x.sum(), y.sum()
+    sxx, sxy = (x**2).sum(), (x*y).sum()
+    denom = (n * sxx - sx**2)
+    if abs(denom) < 1e-9:
+        return None, None
+    a = (n * sxy - sx * sy) / denom
+    b = (sy - a * sx) / n
+    cs = a
+    dprime = b
+    if cs is None or cs <= 0:
+        return None, None
+    if dprime is not None and dprime <= 0:
+        dprime = None
+    return cs, dprime
+
+
+def pace_from_speed(cs_mps: float):
+    """m/s → min/km string."""
+    if cs_mps is None or cs_mps <= 0:
+        return ""
+    sec_per_km = 1000.0 / cs_mps
+    m = int(sec_per_km // 60)
+    s = int(round(sec_per_km - 60*m))
+    return f"{m}:{s:02d} min/km"
+
+
+# ====== Oldal beállítás ======
+st.set_page_config(page_title="Runner Profile – AdatElemzés", page_icon="📊", layout="wide")
+st.title("📊 Runner Profile – AdatElemzés")
+
+# ====== WA score tábla betöltése ======
+if "wa_scores_df" not in st.session_state:
+    try:
+        st.session_state.wa_scores_df = pd.read_csv("wa_score_merged_standardized.csv")
+    except Exception:
+        st.session_state.wa_scores_df = None
+
+wa_df = st.session_state.wa_scores_df
+
+# ====== IDŐK tábla ellenőrzés ======
+if "idok" not in st.session_state or st.session_state.idok.empty:
+    st.warning("Nincs adat az `idok` táblában. Először tölts fel eredményeket az Adatbetöltés oldalon.")
     st.stop()
 
-df = st.session_state["idok"].copy()
+idok = st.session_state.idok.copy()
 
-# ====== SEGÉD: táv (m) és idő (s) becslés az 'Idő' és 'Versenyszám' alapján ======
-EVENT_TO_METERS = {
+# ====== WA pontszámítás ======
+if wa_df is not None:
+    scores = []
+    for _, row in idok.iterrows():
+        score = pontkereso(
+            wa_df=wa_df,
+            gender=row.get("Gender", "Man"),
+            discipline=row.get("Versenyszám", ""),
+            input_time=row.get("Idő", "")
+        )
+        scores.append(score)
+    idok["Score"] = scores
+else:
+    idok["Score"] = None
+
+# ====== Származtatott oszlopok (másodperc, táv) ======
+DIST_TO_METERS = {
     "50 Metres": 50, "55 Metres": 55, "60 Metres": 60, "100 Metres": 100,
-    "200 Metres": 200, "300 Metres": 300, "400 Metres": 400,
-    "500 Metres": 500, "600 Metres": 600, "800 Metres": 800,
-    "1000 Metres": 1000, "1500 Metres": 1500, "Mile": 1609,
-    "2000 Metres": 2000, "3000 Metres": 3000, "5000 Metres": 5000,
-    "10000 Metres": 10000,
-    "5 Kilometres Road": 5000, "10 Kilometres Road": 10000, "15 Kilometres Road": 15000,
-    "20 Kilometres Road": 20000, "25 Kilometres Road": 25000, "30 Kilometres Road": 30000,
-    "10 Miles": 16093, "Half Marathon": 21097, "Marathon": 42195,
-    "100 Kilometres Road": 100000
+    "200 Metres": 200, "200 Metres Short Track": 200, "300 Metres": 300,
+    "300 Metres Short Track": 300, "400 Metres": 400, "400 Metres Short Track": 400,
+    "500 Metres": 500, "500 Metres Short Track": 500, "600 Metres": 600,
+    "600 Metres Short Track": 600, "800 Metres": 800, "800 Metres Short Track": 800,
+    "1000 Metres": 1000, "1000 Metres Short Track": 1000, "1500 Metres": 1500,
+    "1500 Metres Short Track": 1500, "Mile": 1609.34, "Mile Short Track": 1609.34,
+    "2000 Metres": 2000, "2000 Metres Short Track": 2000, "3000 Metres": 3000,
+    "3000 Metres Short Track": 3000, "2 Miles": 3218.68, "2 Miles Short Track": 3218.68,
+    "5000 Metres": 5000, "5000 Metres Short Track": 5000, "10000 Metres": 10000,
+    "5 Kilometres Road": 5000, "10 Kilometres Road": 10000, "10 Miles Road": 16093.4,
+    "15 Kilometres Road": 15000, "Half Marathon": 21097.5, "Marathon": 42195
 }
 
-def time_to_seconds(txt: str) -> Optional[float]:
-    """
-    Elfogad: ss.ss | mm:ss.ss | mm:ss | hh:mm:ss
-    (A WA-projekthez illesztve.)
-    """
-    if not isinstance(txt, str) or not txt.strip():
-        return None
-    t = txt.strip()
-    # hh:mm:ss
-    if t.count(":") == 2:
-        hh, mm, ss = t.split(":")
-        try:
-            return int(hh) * 3600 + int(mm) * 60 + float(ss)
-        except:
-            return None
-    # mm:ss(.ss)
-    if t.count(":") == 1:
-        mm, ss = t.split(":")
-        try:
-            return int(mm) * 60 + float(ss)
-        except:
-            return None
-    # ss(.ss)
-    try:
-        return float(t)
-    except:
-        return None
+idok["sec"] = idok["Idő"].apply(parse_time_to_seconds)
+idok["dist_m"] = idok["Versenyszám"].map(DIST_TO_METERS)
 
-def add_distance_time_columns(df: pd.DataFrame) -> pd.DataFrame:
-    out = df.copy()
-    out["Táv_m"] = out["Versenyszám"].map(EVENT_TO_METERS)
-    out["Idő_sec"] = out["Idő"].apply(time_to_seconds)
-    return out
+# ====== Táblázat megjelenítése ======
+st.subheader("IDŐK táblázat WA pontszámokkal")
+st.dataframe(idok, use_container_width=True, hide_index=True)
 
-df_calc = add_distance_time_columns(df)
+# ====== Legjobb WA pontszám ======
+if idok["Score"].notna().any():
+    best = idok.dropna(subset=["Score"]).sort_values("Score", ascending=False).iloc[0]
+    st.success(f"Legjobb WA pontszám: **{int(best['Score'])}** "
+               f"({best['Versenyszám']} – {best['Idő']})")
 
-# ====== TABOK: Critical Speed | Átlagos lassulás | (Később) WA pontok ======
-tab1, tab2, tab3 = st.tabs(["Critical Speed (CS)", "Átlagos lassulás", "WA pontszámok (később)"])
+# ====== Kritikus sebesség számítás ======
+st.divider()
+st.subheader("⚡ Kritikus sebesség (CS) elemzés")
 
-with tab1:
-    st.markdown("#### Critical Speed (Monod–Scherrer)")
-    st.caption("A CS-t a d = CS·t + D' lineáris modellből becsüljük (t idő [s], d távolság [m]).")
+valid = idok.dropna(subset=["sec","dist_m"])
+valid = valid[(valid["sec"] > 0) & (valid["dist_m"] > 0)]
 
-    # Alap: csak ésszerű tartomány (>=1500m) – csúszka a felhasználónak
-    min_d, max_d = st.slider(
-        "Felhasznált távok (méter) tartománya",
-        min_value=400, max_value=42195, value=(1500, 10000), step=100
-    )
-    use = df_calc.dropna(subset=["Táv_m", "Idő_sec"])
-    use = use[(use["Táv_m"] >= min_d) & (use["Táv_m"] <= max_d)]
-    st.markdown('<div class="card">', unsafe_allow_html=True)
-    st.subheader("Adatok a regresszióhoz")
-    st.dataframe(use[["Versenyszám", "Idő", "Táv_m", "Idő_sec"]], use_container_width=True, hide_index=True)
-
-    if len(use) >= 2:
-        # d = CS * t + D'  => slope = CS
-        t = use["Idő_sec"].to_numpy()
-        d = use["Táv_m"].to_numpy()
-        A = np.vstack([t, np.ones_like(t)]).T
-        # legkisebb négyzetek
-        slope, intercept = np.linalg.lstsq(A, d, rcond=None)[0]
-        CS = slope  # m/s
-        Dprime = intercept  # m
-
-        st.markdown("#### Eredmények")
-        csa, csb, csc = st.columns(3)
-        with csa:
-            st.metric("Critical Speed (CS)", f"{CS:.2f} m/s", help="m/s")
-        with csb:
-            st.metric("CS (perc/km)", f"{(1000/CS)/60:.2f} p/km")
-        with csc:
-            st.metric("D′ (méter)", f"{Dprime:.0f} m")
-
-        # Illesztés-vonal és pontok
-        import altair as alt
-        df_plot = use.copy()
-        df_plot["Modell_d"] = CS * df_plot["Idő_sec"] + Dprime
-
-        pts = alt.Chart(df_plot).mark_circle(size=80).encode(
-            x=alt.X("Idő_sec:Q", title="Idő [s]"),
-            y=alt.Y("Táv_m:Q", title="Távolság [m]"),
-            tooltip=["Versenyszám","Idő","Táv_m","Idő_sec"]
-        )
-        line = alt.Chart(pd.DataFrame({
-            "Idő_sec": np.linspace(df_plot["Idő_sec"].min()*0.9, df_plot["Idő_sec"].max()*1.1, 100)
-        })).transform_calculate(
-            Táv_m=f"{CS}*datum.Idő_sec+{Dprime}"
-        ).mark_line().encode(
-            x="Idő_sec:Q",
-            y=alt.Y("Táv_m:Q", title="Távolság [m]")
-        )
-        st.altair_chart((pts + line).properties(height=360), use_container_width=True)
+if len(valid) < 2:
+    st.info("Adj meg legalább két eredményt a CP számításhoz.")
+else:
+    cs, dprime = calc_cs_cp(valid)
+    if cs is None:
+        st.warning("Nem sikerült kritikus sebességet számolni.")
     else:
-        st.info("Legalább 2 adatpont szükséges a CS becsléséhez.")
+        st.success(f"Kritikus sebesség (CS): **{cs:.3f} m/s** | Kritikus tempó: {pace_from_speed(cs)}")
+        if dprime:
+            st.caption(f"D′ (anaerob kapacitás): ~{dprime:.0f} m")
 
-    st.markdown('</div>', unsafe_allow_html=True)
-
-with tab2:
-    st.markdown("#### Átlagos lassulás (példa metrika)")
-    st.caption("Egyszerű példa: a hosszabb távok fajlagos tempója (p/mp) hogyan romlik a rövidebbekhez képest.")
-    st.markdown('<div class="card">', unsafe_allow_html=True)
-
-    use = df_calc.dropna(subset=["Táv_m", "Idő_sec"]).copy()
-    use["mp_per_km"] = (use["Idő_sec"] / (use["Táv_m"]/1000.0))
-    use = use.sort_values("Táv_m")
-
-    if len(use) >= 2:
-        # baseline: a legrövidebb táv mp/km tempója
-        base = use.iloc[0]["mp_per_km"]
-        use["lassulás_mp_per_km"] = use["mp_per_km"] - base
-
-        st.dataframe(
-            use[["Versenyszám","Idő","Táv_m","mp_per_km","lassulás_mp_per_km"]],
-            use_container_width=True, hide_index=True
-        )
-
-        import altair as alt
-        chart = alt.Chart(use).mark_bar().encode(
-            x=alt.X("Versenyszám:N", sort=None, title="Versenyszám"),
-            y=alt.Y("lassulás_mp_per_km:Q", title="Lassulás [mp/km] a legrövidebb távhoz képest"),
-            tooltip=["Versenyszám","Idő","Táv_m","mp_per_km","lassulás_mp_per_km"]
-        ).properties(height=360)
-        st.altair_chart(chart, use_container_width=True)
-    else:
-        st.info("Legalább 2 adatpont szükséges a lassulás becsléséhez.")
-
-    st.markdown('</div>', unsafe_allow_html=True)
-
-with tab3:
-    st.markdown("#### WA pontszámok")
-    st.info("Itt fogjuk később bekötni a „pontkereső” logikát és megjeleníteni a WA pontokat / eloszlásokat. "
-            "Előbb véglegesítjük az adatbetöltés és számítások keretét.")
+        # ====== Ábra: távolság vs. idő + illesztett egyenes ======
+        fig, ax = plt.subplots()
+        ax.scatter(valid["sec"], valid["dist_m"], label="Eredmények", color="blue")
+        if dprime is not None:
+            x_line = valid["sec"].values
+            y_line = cs * x_line + dprime
+            ax.plot(x_line, y_line, color="red", label="Illesztett modell")
+        ax.set_xlabel("Idő (s)")
+        ax.set_ylabel("Távolság (m)")
+        ax.legend()
+        st.pyplot(fig)
