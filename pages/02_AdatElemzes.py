@@ -135,6 +135,13 @@ with tab3:
 
     wa_df = pd.read_csv(wa_path)
 
+    # idő stringből másodpercek
+    wa_df["result_sec"] = wa_df["result"].apply(lambda x: time_to_seconds(str(x)))
+
+    # egységes pontszám oszlop
+    wa_df = wa_df.rename(columns={"score": "points"})
+
+
     # Segédfüggvény: idő → WA pont
     def wa_points_lookup(g: str, event: str, t_sec: float) -> float | None:
         sub = wa_df[(wa_df["gender"] == g) & (wa_df["discipline"] == event)].copy()
