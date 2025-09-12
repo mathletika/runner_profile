@@ -15,7 +15,49 @@ if "idok" not in st.session_state:
     st.session_state.idok = pd.DataFrame(columns=["Versenyszám","Idő","Gender"])
 
 # ====== Események + formátumok ======
-event_time_formats = {...}  # változatlanul hagyhatjuk, lásd korábbi kód
+event_time_formats = {
+    "50 Metres": "ss.ss",
+    "55 Metres": "ss.ss",
+    "60 Metres": "ss.ss",
+    "100 Metres": "ss.ss",
+    "200 Metres": "ss.ss",
+    "200 Metres Short Track": "ss.ss",
+    "300 Metres": "ss.ss",
+    "300 Metres Short Track": "ss.ss",
+    "400 Metres": "ss.ss",
+    "400 Metres Short Track": "ss.ss",
+    "500 Metres": "mm:ss.ss",
+    "500 Metres Short Track": "mm:ss.ss",
+    "600 Metres": "mm:ss.ss",
+    "600 Metres Short Track": "mm:ss.ss",
+    "800 Metres": "mm:ss.ss",
+    "800 Metres Short Track": "mm:ss.ss",
+    "1000 Metres": "mm:ss.ss",
+    "1000 Metres Short Track": "mm:ss.ss",
+    "1500 Metres": "mm:ss.ss",
+    "1500 Metres Short Track": "mm:ss.ss",
+    "Mile": "mm:ss.ss",
+    "Mile Short Track": "mm:ss.ss",
+    "2000 Metres": "mm:ss.ss",
+    "2000 Metres Short Track": "mm:ss.ss",
+    "3000 Metres": "mm:ss.ss",
+    "3000 Metres Short Track": "mm:ss.ss",
+    "2 Miles": "mm:ss.ss",
+    "2 Miles Short Track": "mm:ss.ss",
+    "5000 Metres": "mm:ss.ss",
+    "5000 Metres Short Track": "mm:ss.ss",
+    "10000 Metres": "mm:ss.ss",
+    "5 Kilometres Road": "mm:ss",
+    "10 Kilometres Road": "mm:ss",
+    "15 Kilometres Road": "mm:ss",
+    "20 Kilometres Road": "mm:ss",
+    "25 Kilometres Road": "mm:ss",
+    "30 Kilometres Road": "mm:ss",
+    "10 Miles Road": "mm:ss",
+    "Half Marathon": "hh:mm:ss",
+    "Marathon": "hh:mm:ss",
+    "100 Kilometres Road": "hh:mm:ss"
+}
 EVENT_OPTIONS = list(event_time_formats.keys())
 
 # ====== Fejléc ======
