@@ -13,7 +13,7 @@ if "manual_cards" not in st.session_state:
     st.session_state.manual_cards = [{"Táv":"", "Idő":""} for _ in range(4)]
 
 if "idok" not in st.session_state:
-    st.session_state.idok = pd.DataFrame(columns=["Versenyszám","Idő","Gender","Forrás"])
+    st.session_state.idok = pd.DataFrame(columns=["Versenyszám","Idő","Gender"])
 
 # ====== Események + formátumok ======
 event_time_formats = {
@@ -79,7 +79,7 @@ with c2:
             if k.get("Táv") and k.get("Idő"):
                 rows.append({
                     "Versenyszám": k["Táv"], "Idő": k["Idő"],
-                    "Gender": st.session_state.gender, "Forrás":"Manuális"
+                    "Gender": st.session_state.gender
                 })
         if rows:
             add_df = pd.DataFrame(rows)
@@ -89,13 +89,39 @@ with c2:
 
 st.divider()
 
-# ====== IDŐK tábla megjelenítése ======
+# ====== IDŐK tábla + törlés ======
 st.subheader("Összesített IDŐK táblázat")
 
 if st.session_state.idok.empty:
     st.info("Még nincs adat a táblában.")
 else:
-    st.dataframe(st.session_state.idok, use_container_width=True, hide_index=True)
+    # Eredeti index megőrzéséhez adjunk egy sorszámot
+    to_show = st.session_state.idok.copy()
+    to_show = to_show.reset_index().rename(columns={"index": "Sorszám"})
+    to_show["Törlés"] = False
+
+    edited = st.data_editor(
+        to_show,
+        use_container_width=True,
+        hide_index=True,
+        column_config={
+            "Törlés": st.column_config.CheckboxColumn("Törlés", help="Jelöld be és nyomd meg a Törlés gombot"),
+        },
+        disabled=["Sorszám"],  # az azonosítót ne szerkesszük
+        num_rows="fixed"
+    )
+
+    del_cols = st.columns([1,4,1])
+    with del_cols[0]:
+        if st.button("🗑️ Kijelöltek törlése"):
+            to_delete_idx = edited.loc[edited["Törlés"] == True, "Sorszám"].tolist()
+            if to_delete_idx:
+                st.session_state.idok.drop(index=to_delete_idx, inplace=True, errors="ignore")
+                st.session_state.idok.reset_index(drop=True, inplace=True)
+                st.success(f"Törölve: {len(to_delete_idx)} sor.")
+                st.rerun()
+            else:
+                st.info("Nincs kijelölt sor törlésre.")
 
 # ====== Gomb a második oldalra ======
 st.divider()
