@@ -117,22 +117,7 @@ if "idok" not in st.session_state or st.session_state.idok.empty:
 
 idok = st.session_state.idok.copy()
 
-# ====== WA pontszámítás ======
-if wa_df is not None:
-    scores = []
-    for _, row in idok.iterrows():
-        score = pontkereso(
-            wa_df=wa_df,
-            gender=row.get("Gender", "Man"),
-            discipline=row.get("Versenyszám", ""),
-            input_time=row.get("Idő", "")
-        )
-        scores.append(score)
-    idok["Score"] = scores
-else:
-    idok["Score"] = None
-
-# ====== Származtatott oszlopok (másodperc, táv) ======
+# Származtatott oszlopok
 DIST_TO_METERS = {
     "50 Metres": 50, "55 Metres": 55, "60 Metres": 60, "100 Metres": 100,
     "200 Metres": 200, "200 Metres Short Track": 200, "300 Metres": 300,
@@ -147,46 +132,66 @@ DIST_TO_METERS = {
     "5 Kilometres Road": 5000, "10 Kilometres Road": 10000, "10 Miles Road": 16093.4,
     "15 Kilometres Road": 15000, "Half Marathon": 21097.5, "Marathon": 42195
 }
-
 idok["sec"] = idok["Idő"].apply(parse_time_to_seconds)
 idok["dist_m"] = idok["Versenyszám"].map(DIST_TO_METERS)
 
-# ====== Táblázat megjelenítése ======
-st.subheader("IDŐK táblázat WA pontszámokkal")
-st.dataframe(idok, use_container_width=True, hide_index=True)
+# ====== Tabs ======
+tab1, tab2, tab3 = st.tabs(["⚡ Kritikus Sebesség", "📈 Riegel exponens", "🏅 WA Score"])
 
-# ====== Legjobb WA pontszám ======
-if idok["Score"].notna().any():
-    best = idok.dropna(subset=["Score"]).sort_values("Score", ascending=False).iloc[0]
-    st.success(f"Legjobb WA pontszám: **{int(best['Score'])}** "
-               f"({best['Versenyszám']} – {best['Idő']})")
+# --- Tab1: Kritikus Sebesség ---
+with tab1:
+    st.subheader("Kritikus Sebesség (CS) elemzés")
+    valid = idok.dropna(subset=["sec","dist_m"])
+    valid = valid[(valid["sec"] > 0) & (valid["dist_m"] > 0)]
 
-# ====== Kritikus sebesség számítás ======
-st.divider()
-st.subheader("⚡ Kritikus sebesség (CS) elemzés")
-
-valid = idok.dropna(subset=["sec","dist_m"])
-valid = valid[(valid["sec"] > 0) & (valid["dist_m"] > 0)]
-
-if len(valid) < 2:
-    st.info("Adj meg legalább két eredményt a CP számításhoz.")
-else:
-    cs, dprime = calc_cs_cp(valid)
-    if cs is None:
-        st.warning("Nem sikerült kritikus sebességet számolni.")
+    if len(valid) < 2:
+        st.info("Adj meg legalább két eredményt a CP számításhoz.")
     else:
-        st.success(f"Kritikus sebesség (CS): **{cs:.3f} m/s** | Kritikus tempó: {pace_from_speed(cs)}")
-        if dprime:
-            st.caption(f"D′ (anaerob kapacitás): ~{dprime:.0f} m")
+        cs, dprime = calc_cs_cp(valid)
+        if cs is None:
+            st.warning("Nem sikerült kritikus sebességet számolni.")
+        else:
+            st.success(f"Kritikus sebesség (CS): **{cs:.3f} m/s** | Kritikus tempó: {pace_from_speed(cs)}")
+            if dprime:
+                st.caption(f"D′ (anaerob kapacitás): ~{dprime:.0f} m")
 
-        # ====== Ábra: távolság vs. idő + illesztett egyenes ======
-        fig, ax = plt.subplots()
-        ax.scatter(valid["sec"], valid["dist_m"], label="Eredmények", color="blue")
-        if dprime is not None:
-            x_line = valid["sec"].values
-            y_line = cs * x_line + dprime
-            ax.plot(x_line, y_line, color="red", label="Illesztett modell")
-        ax.set_xlabel("Idő (s)")
-        ax.set_ylabel("Távolság (m)")
-        ax.legend()
-        st.pyplot(fig)
+            # Ábra
+            fig, ax = plt.subplots()
+            ax.scatter(valid["sec"], valid["dist_m"], label="Eredmények", color="blue")
+            if dprime is not None:
+                x_line = valid["sec"].values
+                y_line = cs * x_line + dprime
+                ax.plot(x_line, y_line, color="red", label="Illesztett modell")
+            ax.set_xlabel("Idő (s)")
+            ax.set_ylabel("Távolság (m)")
+            ax.legend()
+            st.pyplot(fig)
+
+# --- Tab2: Riegel exponens ---
+with tab2:
+    st.subheader("Riegel exponens elemzés")
+    st.info("Itt lesz majd a Riegel exponens számítása és vizualizációja.")
+
+# --- Tab3: WA Score ---
+with tab3:
+    st.subheader("WA pontszámítás")
+    if wa_df is not None:
+        scores = []
+        for _, row in idok.iterrows():
+            score = pontkereso(
+                wa_df=wa_df,
+                gender=row.get("Gender", "Man"),
+                discipline=row.get("Versenyszám", ""),
+                input_time=row.get("Idő", "")
+            )
+            scores.append(score)
+        idok["Score"] = scores
+    else:
+        idok["Score"] = None
+
+    st.dataframe(idok, use_container_width=True, hide_index=True)
+
+    if idok["Score"].notna().any():
+        best = idok.dropna(subset=["Score"]).sort_values("Score", ascending=False).iloc[0]
+        st.success(f"Legjobb WA pontszám: **{int(best['Score'])}** "
+                   f"({best['Versenyszám']} – {best['Idő']})")

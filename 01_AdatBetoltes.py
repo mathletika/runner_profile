@@ -9,10 +9,10 @@ if "gender" not in st.session_state:
     st.session_state.gender = "Man"
 
 if "manual_cards" not in st.session_state:
-    st.session_state.manual_cards = [{"Táv":"", "Idő":"", "Dátum":"", "Használat":True} for _ in range(2)]
+    st.session_state.manual_cards = [{"Táv":"", "Idő":"", "Használat":True} for _ in range(2)]
 
 if "idok" not in st.session_state:
-    st.session_state.idok = pd.DataFrame(columns=["Versenyszám","Idő","Dátum","Gender","Forrás"])
+    st.session_state.idok = pd.DataFrame(columns=["Versenyszám","Idő","Gender","Forrás"])
 
 # ====== Események + formátumok ======
 event_time_formats = {
@@ -42,9 +42,9 @@ with st.sidebar:
 st.subheader("Manuális eredmények")
 st.caption("Válaszd ki a versenyszámot, add meg az időt (pl. 16:45.2 vagy 1:15:30), majd add a táblázathoz.")
 
-for i in range(0, len(st.session_state.manual_cards), 2):
-    cols = st.columns(2)
-    for j in range(2):
+for i in range(0, len(st.session_state.manual_cards), 4):
+    cols = st.columns(4)
+    for j in range(4):
         idx = i + j
         if idx >= len(st.session_state.manual_cards): break
         k = st.session_state.manual_cards[idx]
@@ -54,32 +54,29 @@ for i in range(0, len(st.session_state.manual_cards), 2):
                                     index=([""] + EVENT_OPTIONS).index(k["Táv"]) if k["Táv"] in EVENT_OPTIONS else 0,
                                     key=f"manual_tav_{idx}")
             k["Idő"] = st.text_input("Időeredmény", value=k.get("Idő",""), key=f"manual_ido_{idx}")
-            k["Dátum"] = st.text_input("Dátum (opcionális)", value=k.get("Dátum",""), key=f"manual_date_{idx}", placeholder="YYYY-MM-DD")
             k["Használat"] = st.checkbox("Használat", value=k.get("Használat", True), key=f"manual_use_{idx}")
-            c1, c2 = st.columns([1,1])
-            with c1:
-                if st.button("Eltávolítás", key=f"manual_rm_{idx}"):
-                    st.session_state.manual_cards.pop(idx); st.experimental_rerun()
-            with c2:
-                st.write("")
+            if st.button("Eltávolítás", key=f"manual_rm_{idx}"):
+                st.session_state.manual_cards.pop(idx)
+                st.rerun()
 
 c1, c2 = st.columns([1,1])
 with c1:
     if st.button("Új kártya hozzáadása"):
-        st.session_state.manual_cards.append({"Táv":"", "Idő":"", "Dátum":"", "Használat":True}); st.experimental_rerun()
+        st.session_state.manual_cards.append({"Táv":"", "Idő":"", "Használat":True})
+        st.rerun()
 with c2:
     if st.button("Megadott eredmények hozzáadása az IDŐK táblához", type="primary"):
         rows = []
         for k in st.session_state.manual_cards:
             if k.get("Használat", False) and k.get("Táv") and k.get("Idő"):
                 rows.append({
-                    "Versenyszám": k["Táv"], "Idő": k["Idő"], "Dátum": k.get("Dátum",""),
+                    "Versenyszám": k["Táv"], "Idő": k["Idő"],
                     "Gender": st.session_state.gender, "Forrás":"Manuális"
                 })
         if rows:
             add_df = pd.DataFrame(rows)
             st.session_state.idok = pd.concat([st.session_state.idok, add_df], ignore_index=True)
-            st.session_state.idok.drop_duplicates(subset=["Versenyszám","Idő","Dátum","Gender"], inplace=True, keep="first")
+            st.session_state.idok.drop_duplicates(subset=["Versenyszám","Idő","Gender"], inplace=True, keep="first")
             st.success(f"Hozzáadva {len(add_df)} sor.")
 
 st.divider()
