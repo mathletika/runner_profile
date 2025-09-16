@@ -244,6 +244,7 @@ with tab3:
     work = work.dropna(subset=["WA pont"])
     work = work.sort_values("WA pont", ascending=False)
 
+    # KÁRTYÁK
     # ---- CSS definiálása egyszer ----
     st.markdown("""
     <style>
@@ -257,12 +258,12 @@ with tab3:
     .wa-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-        gap: 12px;
+        gap: 10px;
     }
     .wa-card {
         background-color: #f9fafb;
         border-radius: 6px;
-        padding: 12px;
+        padding: 8px 10px;
         text-align: center;
         font-size: 14px;
         font-weight: 600;
@@ -275,13 +276,9 @@ with tab3:
     cards_html = '<div class="wa-box"><div class="wa-grid">'
 
     for _, row in work.iterrows():
-        cards_html += f"""
-        <div class="wa-card">
-            {row['Versenyszám']} ({row['Idő']}): 🏅 {int(round(row['WA pont']))} p
-        </div>
-        """
+        cards_html += f'<div class="wa-card">{row["Versenyszám"]} ({row["Idő"]}): 🏅 {int(round(row["WA pont"]))} p</div>'
 
-    cards_html += "</div></div>"
+    cards_html += '</div></div>'
 
     st.markdown(cards_html, unsafe_allow_html=True)
 
