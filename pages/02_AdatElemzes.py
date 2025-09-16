@@ -245,24 +245,25 @@ with tab3:
     work = work.sort_values("WA pont", ascending=False)
 
     # ---- Kártyák boxban (reszponzív grid) ----
+    # ---- Kártyák boxban (reszponzív grid) ----
     cards_html = """
     <style>
     .wa-box {
         border: 1px solid #ddd;
         border-radius: 8px;
-        padding: 12px;
-        margin-bottom: 12px;
+        padding: 16px;
+        margin-bottom: 16px;
         background-color: #ffffff;
     }
     .wa-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-        gap: 10px;
+        gap: 12px;
     }
     .wa-card {
         background-color: #f9fafb;
         border-radius: 6px;
-        padding: 10px;
+        padding: 12px;
         text-align: center;
         font-size: 14px;
         font-weight: 600;
@@ -284,7 +285,6 @@ with tab3:
       </div>
     </div>
     """
-
     st.markdown(cards_html, unsafe_allow_html=True)
 
     # ---- Összegzés emojikkal ----
