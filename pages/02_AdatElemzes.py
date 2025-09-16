@@ -245,7 +245,6 @@ with tab3:
     work = work.sort_values("WA pont", ascending=False)
 
     # ---- Kártyák boxban (reszponzív grid) ----
-    # ---- Kártyák boxban (reszponzív grid) ----
     cards_html = """
     <style>
     .wa-box {
@@ -285,6 +284,8 @@ with tab3:
       </div>
     </div>
     """
+
+    # EZ A FONTOS: itt legyen a `unsafe_allow_html=True`
     st.markdown(cards_html, unsafe_allow_html=True)
 
     # ---- Összegzés emojikkal ----
