@@ -151,13 +151,30 @@ with tab1:
             unsafe_allow_html=True,
         )
 
+
+        import io
+
+        # ... kritikus sebesség számítás után:
         xs = np.linspace(x.min() * 0.9, x.max() * 1.1, 100)
         ys = cs * xs + dprime
         fig, ax = plt.subplots(figsize=(3.6, 2.6), dpi=120)
-        ax.scatter(x, y, s=12); ax.plot(xs, ys, linewidth=1.2)
-        ax.set_xlabel("Idő (s)", fontsize=9); ax.set_ylabel("Táv (m)", fontsize=9)
+        ax.scatter(x, y, s=12)
+        ax.plot(xs, ys, linewidth=1.2)
+        ax.set_xlabel("Idő (s)", fontsize=9)
+        ax.set_ylabel("Táv (m)", fontsize=9)
         ax.tick_params(axis="both", labelsize=8)
         st.pyplot(fig, use_container_width=False)
+
+        # --- ÚJ: mentés a session-be exporthoz ---
+        buf = io.BytesIO()
+        fig.savefig(buf, format="png", dpi=120, bbox_inches="tight")
+        buf.seek(0)
+        st.session_state["cs_result"] = {
+            "pace_str": seconds_to_mmss_per_km(pace),
+            "cs": cs,
+            "dprime": dprime,
+            "plot_png": buf.getvalue(),
+        }
 
 # ===========================================================
 #                 RIEGEL EXPONENS (meghagyva)
