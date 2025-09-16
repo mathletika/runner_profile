@@ -244,8 +244,8 @@ with tab3:
     work = work.dropna(subset=["WA pont"])
     work = work.sort_values("WA pont", ascending=False)
 
-    # ---- Kártyák boxban (reszponzív grid) ----
-    cards_html = """
+    # ---- CSS definiálása egyszer ----
+    st.markdown("""
     <style>
     .wa-box {
         border: 1px solid #ddd;
@@ -269,9 +269,10 @@ with tab3:
         white-space: nowrap;
     }
     </style>
-    <div class="wa-box">
-      <div class="wa-grid">
-    """
+    """, unsafe_allow_html=True)
+
+    # ---- Dinamikus HTML tartalom ----
+    cards_html = '<div class="wa-box"><div class="wa-grid">'
 
     for _, row in work.iterrows():
         cards_html += f"""
@@ -280,12 +281,8 @@ with tab3:
         </div>
         """
 
-    cards_html += """
-      </div>
-    </div>
-    """
+    cards_html += "</div></div>"
 
-    # EZ A FONTOS: itt legyen a `unsafe_allow_html=True`
     st.markdown(cards_html, unsafe_allow_html=True)
 
     # ---- Összegzés emojikkal ----
