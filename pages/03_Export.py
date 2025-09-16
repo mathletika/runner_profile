@@ -4,6 +4,7 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.units import cm
 from reportlab.lib.utils import ImageReader
 from io import BytesIO
+import pandas as pd
 import numpy as np
 
 st.set_page_config(page_title="Export", page_icon="📄", layout="centered")
@@ -17,14 +18,50 @@ gender = st.session_state.get("gender", "Man")
 idok = st.session_state.get("idok")
 cs_result = st.session_state.get("cs_result")
 
-if st.button("📥 PDF exportálása"):
+# --- Segédfüggvények ---
+def time_to_seconds(txt: str) -> float:
+    if not isinstance(txt, str) or not txt.strip():
+        return np.nan
+    parts = txt.strip().split(":")
+    if len(parts) == 1:
+        return float(parts[0])
+    elif len(parts) == 2:
+        return int(parts[0]) * 60 + float(parts[1])
+    elif len(parts) == 3:
+        return int(parts[0]) * 3600 + int(parts[1]) * 60 + float(parts[2])
+    return np.nan
+
+def wa_points_lookup(gender: str, event: str, seconds: float) -> float:
+    df = pd.read_csv("wa_score_merged_standardized.csv")
+    sub = df[(df["gender"] == gender) & (df["discipline"] == event)].copy()
+    if sub.empty:
+        return np.nan
+    sub = sub.sort_values("result_sec")
+    sub = sub[sub["result_sec"] <= seconds]
+    if sub.empty:
+        return np.nan
+    return float(sub.iloc[-1]["points"])
+
+# --- WA pont hozzárendelés ---
+work = None
+if idok is not None and not idok.empty:
+    work = idok.copy()
+    work["s"] = work["Idő"].apply(time_to_seconds)
+    work["WA pont"] = work.apply(
+        lambda r: wa_points_lookup(gender, r["Versenyszám"], r["s"]),
+        axis=1
+    )
+    work = work.dropna(subset=["WA pont"])
+    work = work.sort_values("Versenyszám")
+
+if st.button("📥 PDF exportálása") and work is not None:
     buffer = BytesIO()
     c = canvas.Canvas(buffer, pagesize=A4)
     width, height = A4
     y = height - 2*cm
 
     # ---------------- Profil box ----------------
-    c.setFillColorRGB(0.95, 0.97, 1)  # halvány kék háttér
+    c.setFillColorRGB(0.95, 0.97, 1)  # halvány kék
     c.roundRect(2*cm, y-3*cm, width-4*cm, 2.5*cm, 12, stroke=0, fill=1)
     c.setFillColorRGB(0,0,0)
     c.setFont("Helvetica-Bold", 14)
@@ -36,15 +73,13 @@ if st.button("📥 PDF exportálása"):
     y -= 4*cm
 
     # ---------------- WA pont box ----------------
-    if idok is not None and not idok.empty:
-        work = idok.copy()
-        work = work.sort_values("Versenyszám")  # táv szerinti sorrend
-        best = work.iloc[0]
-        worst = work.iloc[-1]
+    if not work.empty:
+        best = work.loc[work["WA pont"].idxmax()]
+        worst = work.loc[work["WA pont"].idxmin()]
         avg = work["WA pont"].mean()
 
         box_height = 6*cm
-        c.setFillColorRGB(0.96,0.96,0.96)
+        c.setFillColorRGB(0.96,0.96,0.96)  # szürke háttér
         c.roundRect(2*cm, y-box_height, width-4*cm, box_height, 12, stroke=0, fill=1)
         c.setFillColorRGB(0,0,0)
         c.setFont("Helvetica-Bold", 14)
@@ -60,9 +95,9 @@ if st.button("📥 PDF exportálása"):
                 cur_y -= row_height
             x0 = 2*cm + col*col_width
 
-            # szín: arany, ha ez a legjobb
+            # arany háttér a legjobbhoz
             if row["WA pont"] == work["WA pont"].max():
-                c.setFillColorRGB(1,0.95,0.75)  # halvány arany
+                c.setFillColorRGB(1,0.95,0.75)
             else:
                 c.setFillColorRGB(1,1,1)
             c.roundRect(x0+0.2*cm, cur_y-1.2*cm, col_width-0.4*cm, 1.2*cm, 6, stroke=1, fill=1)
