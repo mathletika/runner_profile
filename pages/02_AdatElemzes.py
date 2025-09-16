@@ -246,7 +246,8 @@ with tab3:
 
     # ---- Kártyák boxban ----
     with st.container(border=True):
-        st.markdown("<div style='padding:12px;'>", unsafe_allow_html=True)
+        st.markdown("<div style='display:flex;flex-direction:column;justify-content:center;height:100%;padding:12px;'>",
+                    unsafe_allow_html=True)
 
         for i in range(0, len(work), 8):
             cols = st.columns(8, gap="small")
