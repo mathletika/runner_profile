@@ -122,6 +122,14 @@ if st.button("📥 PDF exportálása") and work is not None and not work.empty:
 
         y -= (box_height + 1 * cm)
 
+    # Grafikon fehér dobozban
+    if "plot_png" in cs_result:
+        img = ImageReader(BytesIO(cs_result["plot_png"]))
+        graph_height = 6*cm
+        c.setFillColorRGB(1,1,1)
+        c.roundRect(2*cm, y-graph_height, width-4*cm, graph_height, 12, stroke=1, fill=1)
+        c.drawImage(img, 2*cm, y-graph_height, width-4*cm, graph_height, preserveAspectRatio=True, mask="auto")
+        y -= (graph_height+1*cm)
     # ---------------- Mentés ----------------
     c.save()
     buffer.seek(0)
