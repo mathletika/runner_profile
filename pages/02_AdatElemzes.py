@@ -261,6 +261,9 @@ with tab3:
     work = work.dropna(subset=["WA pont"])
     work = work.sort_values("WA pont", ascending=False)
 
+    # HOgy be tudjuk tölteni majd az Exporthoz
+    st.session_state["wa_results"] = work
+
     # KÁRTYÁK
     # ---- CSS definiálása egyszer ----
     st.markdown("""
