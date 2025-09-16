@@ -7,8 +7,12 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from io import BytesIO
 
-# Emojihoz font
-pdfmetrics.registerFont(TTFont("DejaVuSans", "DejaVuSans.ttf"))
+# Emojihoz font (fel kell tölteni a repo-ba: fonts/DejaVuSans.ttf)
+try:
+    pdfmetrics.registerFont(TTFont("DejaVuSans", "fonts/DejaVuSans.ttf"))
+    font_emoji = "DejaVuSans"
+except:
+    font_emoji = "Helvetica"  # fallback, ha nincs meg a font
 
 st.set_page_config(page_title="Export", page_icon="📄", layout="centered")
 st.title("📄 Export futóprofil")
@@ -17,7 +21,6 @@ st.title("📄 Export futóprofil")
 name = st.text_input("Név")
 age = st.number_input("Életkor", min_value=18, max_value=100, step=1, value=18)
 gender = st.session_state.get("gender", "Man")
-
 gender_hu = "Férfi" if gender == "Man" else "Nő"
 
 work = st.session_state.get("wa_results")
@@ -32,15 +35,29 @@ if st.button("📥 PDF exportálása") and work is not None and not work.empty:
     # ---------------- Profil ----------------
     c.setFont("Helvetica-Bold", 14)
     c.drawString(2*cm, y, "Profil")
-    y -= 1*cm
+    y -= 0.5*cm  # kisebb távolság
 
-    c.setFillColorRGB(0.95, 0.97, 1)  # halvány kék
-    c.roundRect(2*cm, y-2.5*cm, width-4*cm, 2*cm, 12, stroke=0, fill=1)
+    box_height = 1.5*cm
+    c.setFillColorRGB(0.95, 0.97, 1)
+    c.roundRect(2*cm, y-box_height, width-4*cm, box_height, 12, stroke=0, fill=1)
+
     c.setFillColorRGB(0,0,0)
+    c.setFont("Helvetica-Bold", 11)
+    c.drawString(2.5*cm, y-1.0*cm, "Név:")
     c.setFont("Helvetica", 11)
-    c.drawString(2.5*cm, y-1.2*cm,
-        f"Név: {name}    Életkor: {age} év    Nem: {gender_hu}")
-    y -= 3.5*cm
+    c.drawString(4*cm, y-1.0*cm, f"{name}")
+
+    c.setFont("Helvetica-Bold", 11)
+    c.drawString(9*cm, y-1.0*cm, "Életkor:")
+    c.setFont("Helvetica", 11)
+    c.drawString(11*cm, y-1.0*cm, f"{age} év")
+
+    c.setFont("Helvetica-Bold", 11)
+    c.drawString(15*cm, y-1.0*cm, "Nem:")
+    c.setFont("Helvetica", 11)
+    c.drawString(16.5*cm, y-1.0*cm, f"{gender_hu}")
+
+    y -= (box_height+1.5*cm)
 
     # ---------------- WA pontok ----------------
     best = work.loc[work["WA pont"].idxmax()]
@@ -49,7 +66,7 @@ if st.button("📥 PDF exportálása") and work is not None and not work.empty:
 
     c.setFont("Helvetica-Bold", 14)
     c.drawString(2*cm, y, "Eredmények és WA pontszámok")
-    y -= 1*cm
+    y -= 0.5*cm
 
     box_height = 6*cm
     c.setFillColorRGB(0.96,0.96,0.96)
@@ -72,37 +89,38 @@ if st.button("📥 PDF exportálása") and work is not None and not work.empty:
 
         c.setFillColorRGB(0,0,0)
         c.setFont("Helvetica-Bold", 8)
-        c.drawCentredString(x0+col_width/2, cur_y-0.4*cm, f"{row['Versenyszám']} ({row['Idő']})")
-        c.setFont("DejaVuSans", 8)
-        c.drawCentredString(x0+col_width/2, cur_y-0.7*cm, f"🏅 {int(row['WA pont'])} p")
+        c.drawCentredString(x0+col_width/2, cur_y-0.5*cm, f"{row['Versenyszám']} ({row['Idő']})")
+        c.setFont(font_emoji, 8)
+        c.drawCentredString(x0+col_width/2, cur_y-0.8*cm, f"🏅 {int(row['WA pont'])} p")
 
     # szöveges összegzés emojikkal
-    c.setFont("DejaVuSans", 10)
+    c.setFont(font_emoji, 10)
     c.drawString(2*cm, y-box_height-0.8*cm, f"🥇 Legjobb: {best['Versenyszám']} {best['Idő']} ({int(best['WA pont'])} p)")
     c.drawString(2*cm, y-box_height-1.5*cm, f"📊 Átlagos: {int(avg)} p")
     c.drawString(2*cm, y-box_height-2.2*cm, f"🐢 Legalacsonyabb: {worst['Versenyszám']} {worst['Idő']} ({int(worst['WA pont'])} p)")
 
-    y -= (box_height+3*cm)
+    y -= (box_height+3.5*cm)
 
     # ---------------- Kritikus Sebesség ----------------
     if cs_result:
         c.setFont("Helvetica-Bold", 14)
-        c.drawString(2*cm, y, "Critical Speed")
-        y -= 1*cm
+        c.drawString(2 * cm, y, "Critical Speed")
+        y -= 0.5 * cm
 
-        c.setFillColorRGB(0.9,1,0.9)
-        c.roundRect(2*cm, y-2*cm, width-4*cm, 1.5*cm, 12, stroke=0, fill=1)
-        c.setFillColorRGB(0,0,0)
-        c.setFont("Helvetica", 11)
-        c.drawString(2.5*cm, y-1.0*cm, f"Kritikus tempó: {cs_result['pace_str']}   CS: {cs_result['cs']:.2f} m/s   D′: {cs_result['dprime']:.0f} m")
+        c.setFillColorRGB(0.9, 1, 0.9)
+        box_height = 2 * cm
+        c.roundRect(2 * cm, y - box_height, width - 4 * cm, box_height, 12, stroke=0, fill=1)
+        c.setFillColorRGB(0, 0, 0)
 
-        # grafikon keretben
-        if "plot_png" in cs_result:
-            y -= 7*cm
-            c.setFillColorRGB(1,1,1)
-            c.roundRect(2*cm, y, width-4*cm, 6*cm, 12, stroke=1, fill=1)
-            img = ImageReader(BytesIO(cs_result["plot_png"]))
-            c.drawImage(img, 2*cm, y, width-4*cm, 6*cm, preserveAspectRatio=True, mask='auto')
+        # Kritikus tempó – nagyobb és félkövér
+        c.setFont("Helvetica-Bold", 12)
+        c.drawString(2.5 * cm, y - 0.9 * cm, f"Kritikus tempó: {cs_result['pace_str']}")
+
+        # CS és D′ – kisebb és nem bold
+        c.setFont("Helvetica", 10)
+        c.drawString(2.5 * cm, y - 1.5 * cm, f"CS: {cs_result['cs']:.2f} m/s     D′: {cs_result['dprime']:.0f} m")
+
+        y -= (box_height + 1 * cm)
 
     # ---------------- Mentés ----------------
     c.save()
