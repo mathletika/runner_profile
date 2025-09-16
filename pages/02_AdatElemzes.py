@@ -247,23 +247,8 @@ with tab3:
 
     # ---- Kártyák boxban ----
     # ---- Kártyák boxban ----
-    with st.container():
-        st.markdown(
-            """
-            <style>
-            .wa-box {
-                border: 1px solid #ddd;
-                border-radius: 8px;
-                padding: 12px;
-                margin-bottom: 12px;
-                background-color: #ffffff;
-            }
-            </style>
-            """,
-            unsafe_allow_html=True,
-        )
-
-        st.markdown("<div class='wa-box'>", unsafe_allow_html=True)
+    # ---- Kártyák boxban ----
+    with st.container(border=True):
         for i in range(0, len(work), 8):
             cols = st.columns(8, gap="small")
             for j in range(8):
@@ -282,14 +267,13 @@ with tab3:
                             align-items:center;
                             justify-content:center;
                             height:60px;
-                            font-size:13px;
-                            font-weight:500;">
+                            font-size:14px;
+                            font-weight:600;">
                             {row['Versenyszám']} ({row['Idő']}): 🏅 {int(round(row['WA pont']))} p
                         </div>
                         """,
                         unsafe_allow_html=True,
                     )
-        st.markdown("</div>", unsafe_allow_html=True)
 
     # ---- Összegzés emojikkal ----
     if not work.empty:
