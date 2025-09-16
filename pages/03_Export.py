@@ -8,11 +8,13 @@ from reportlab.pdfbase.ttfonts import TTFont
 from io import BytesIO
 
 # Emojihoz font (fel kell tölteni a repo-ba: fonts/DejaVuSans.ttf)
-try:
-    pdfmetrics.registerFont(TTFont("DejaVuSans", "fonts/DejaVuSans.ttf"))
-    font_emoji = "DejaVuSans"
-except:
-    font_emoji = "Helvetica"  # fallback, ha nincs meg a font
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+import os
+
+font_path = os.path.join("fonts", "DejaVuSans.ttf")
+pdfmetrics.registerFont(TTFont("DejaVuSans", font_path))
+font_emoji = "DejaVuSans"
 
 st.set_page_config(page_title="Export", page_icon="📄", layout="centered")
 st.title("📄 Export futóprofil")
