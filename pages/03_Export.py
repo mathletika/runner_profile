@@ -4,8 +4,6 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.units import cm
 from reportlab.lib.utils import ImageReader
 from io import BytesIO
-import pandas as pd
-import numpy as np
 
 st.set_page_config(page_title="Export", page_icon="📄", layout="centered")
 st.title("📄 Export futóprofil")
@@ -15,46 +13,10 @@ name = st.text_input("Név")
 age = st.number_input("Életkor", min_value=5, max_value=100, step=1)
 gender = st.session_state.get("gender", "Man")
 
-idok = st.session_state.get("idok")
+work = st.session_state.get("wa_results")   # <-- már kész táblázat
 cs_result = st.session_state.get("cs_result")
 
-# --- Segédfüggvények ---
-def time_to_seconds(txt: str) -> float:
-    if not isinstance(txt, str) or not txt.strip():
-        return np.nan
-    parts = txt.strip().split(":")
-    if len(parts) == 1:
-        return float(parts[0])
-    elif len(parts) == 2:
-        return int(parts[0]) * 60 + float(parts[1])
-    elif len(parts) == 3:
-        return int(parts[0]) * 3600 + int(parts[1]) * 60 + float(parts[2])
-    return np.nan
-
-def wa_points_lookup(gender: str, event: str, seconds: float) -> float:
-    df = pd.read_csv("wa_score_merged_standardized.csv")
-    sub = df[(df["gender"] == gender) & (df["discipline"] == event)].copy()
-    if sub.empty:
-        return np.nan
-    sub = sub.sort_values("result_sec")
-    sub = sub[sub["result_sec"] <= seconds]
-    if sub.empty:
-        return np.nan
-    return float(sub.iloc[-1]["points"])
-
-# --- WA pont hozzárendelés ---
-work = None
-if idok is not None and not idok.empty:
-    work = idok.copy()
-    work["s"] = work["Idő"].apply(time_to_seconds)
-    work["WA pont"] = work.apply(
-        lambda r: wa_points_lookup(gender, r["Versenyszám"], r["s"]),
-        axis=1
-    )
-    work = work.dropna(subset=["WA pont"])
-    work = work.sort_values("Versenyszám")
-
-if st.button("📥 PDF exportálása") and work is not None:
+if st.button("📥 PDF exportálása") and work is not None and not work.empty:
     buffer = BytesIO()
     c = canvas.Canvas(buffer, pagesize=A4)
     width, height = A4
@@ -73,46 +35,45 @@ if st.button("📥 PDF exportálása") and work is not None:
     y -= 4*cm
 
     # ---------------- WA pont box ----------------
-    if not work.empty:
-        best = work.loc[work["WA pont"].idxmax()]
-        worst = work.loc[work["WA pont"].idxmin()]
-        avg = work["WA pont"].mean()
+    best = work.loc[work["WA pont"].idxmax()]
+    worst = work.loc[work["WA pont"].idxmin()]
+    avg = work["WA pont"].mean()
 
-        box_height = 6*cm
-        c.setFillColorRGB(0.96,0.96,0.96)  # szürke háttér
-        c.roundRect(2*cm, y-box_height, width-4*cm, box_height, 12, stroke=0, fill=1)
+    box_height = 6*cm
+    c.setFillColorRGB(0.96,0.96,0.96)  # szürke háttér
+    c.roundRect(2*cm, y-box_height, width-4*cm, box_height, 12, stroke=0, fill=1)
+    c.setFillColorRGB(0,0,0)
+    c.setFont("Helvetica-Bold", 14)
+    c.drawString(2.5*cm, y-1*cm, "Eredmények és WA pontszámok")
+
+    # kártyák grid
+    row_height = 1.5*cm
+    col_width = (width-4*cm)/3
+    cur_y = y-2*cm
+    for i, (_, row) in enumerate(work.iterrows()):
+        col = i % 3
+        if col == 0 and i>0:
+            cur_y -= row_height
+        x0 = 2*cm + col*col_width
+
+        # arany háttér a legjobbhoz
+        if row["WA pont"] == work["WA pont"].max():
+            c.setFillColorRGB(1,0.95,0.75)
+        else:
+            c.setFillColorRGB(1,1,1)
+        c.roundRect(x0+0.2*cm, cur_y-1.2*cm, col_width-0.4*cm, 1.2*cm, 6, stroke=1, fill=1)
         c.setFillColorRGB(0,0,0)
-        c.setFont("Helvetica-Bold", 14)
-        c.drawString(2.5*cm, y-1*cm, "Eredmények és WA pontszámok")
+        c.setFont("Helvetica", 8)
+        c.drawCentredString(x0+col_width/2, cur_y-0.5*cm,
+            f"{row['Versenyszám']} ({row['Idő']}) — 🏅 {int(row['WA pont'])} p")
 
-        # kártyák grid
-        row_height = 1.5*cm
-        col_width = (width-4*cm)/3
-        cur_y = y-2*cm
-        for i, (_, row) in enumerate(work.iterrows()):
-            col = i % 3
-            if col == 0 and i>0:
-                cur_y -= row_height
-            x0 = 2*cm + col*col_width
+    # szöveges összegzés
+    c.setFont("Helvetica", 10)
+    c.drawString(2*cm, y-box_height-0.8*cm, f"🥇 Legjobb: {best['Versenyszám']} {best['Idő']} ({int(best['WA pont'])} p)")
+    c.drawString(2*cm, y-box_height-1.5*cm, f"📊 Átlagos: {int(avg)} p")
+    c.drawString(2*cm, y-box_height-2.2*cm, f"🐢 Legalacsonyabb: {worst['Versenyszám']} {worst['Idő']} ({int(worst['WA pont'])} p)")
 
-            # arany háttér a legjobbhoz
-            if row["WA pont"] == work["WA pont"].max():
-                c.setFillColorRGB(1,0.95,0.75)
-            else:
-                c.setFillColorRGB(1,1,1)
-            c.roundRect(x0+0.2*cm, cur_y-1.2*cm, col_width-0.4*cm, 1.2*cm, 6, stroke=1, fill=1)
-            c.setFillColorRGB(0,0,0)
-            c.setFont("Helvetica", 8)
-            c.drawCentredString(x0+col_width/2, cur_y-0.5*cm,
-                f"{row['Versenyszám']} ({row['Idő']}) — 🏅 {int(row['WA pont'])} p")
-
-        # szöveges összegzés
-        c.setFont("Helvetica", 10)
-        c.drawString(2*cm, y-box_height-0.8*cm, f"🥇 Legjobb: {best['Versenyszám']} {best['Idő']} ({int(best['WA pont'])} p)")
-        c.drawString(2*cm, y-box_height-1.5*cm, f"📊 Átlagos: {int(avg)} p")
-        c.drawString(2*cm, y-box_height-2.2*cm, f"🐢 Legalacsonyabb: {worst['Versenyszám']} {worst['Idő']} ({int(worst['WA pont'])} p)")
-
-        y -= (box_height+3*cm)
+    y -= (box_height+3*cm)
 
     # ---------------- Kritikus Sebesség ----------------
     if cs_result:
