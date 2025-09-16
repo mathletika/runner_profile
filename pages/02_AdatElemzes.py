@@ -244,38 +244,48 @@ with tab3:
     work = work.dropna(subset=["WA pont"])
     work = work.sort_values("WA pont", ascending=False)
 
-    # ---- Kártyák boxban ----
-    with st.container(border=True):
-        st.markdown("<div style='display:flex;flex-direction:column;justify-content:center;height:100%;padding:12px;'>",
-                    unsafe_allow_html=True)
+    # ---- Kártyák boxban (reszponzív grid) ----
+    cards_html = """
+    <style>
+    .wa-box {
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 12px;
+        margin-bottom: 12px;
+        background-color: #ffffff;
+    }
+    .wa-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 10px;
+    }
+    .wa-card {
+        background-color: #f9fafb;
+        border-radius: 6px;
+        padding: 10px;
+        text-align: center;
+        font-size: 14px;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+    </style>
+    <div class="wa-box">
+      <div class="wa-grid">
+    """
 
-        for i in range(0, len(work), 8):
-            cols = st.columns(8, gap="small")
-            for j in range(8):
-                if i + j >= len(work):
-                    break
-                row = work.iloc[i + j]
-                with cols[j]:
-                    st.markdown(
-                        f"""
-                        <div style="
-                            background-color:#f9fafb;
-                            border-radius:6px;
-                            padding:12px;
-                            text-align:center;
-                            display:flex;
-                            align-items:center;
-                            justify-content:center;
-                            height:60px;
-                            font-size:14px;
-                            font-weight:600;">
-                            {row['Versenyszám']} ({row['Idő']}): 🏅 {int(round(row['WA pont']))} p
-                        </div>
-                        """,
-                        unsafe_allow_html=True,
-                    )
+    for _, row in work.iterrows():
+        cards_html += f"""
+        <div class="wa-card">
+            {row['Versenyszám']} ({row['Idő']}): 🏅 {int(round(row['WA pont']))} p
+        </div>
+        """
 
-        st.markdown("</div>", unsafe_allow_html=True)
+    cards_html += """
+      </div>
+    </div>
+    """
+
+    st.markdown(cards_html, unsafe_allow_html=True)
 
     # ---- Összegzés emojikkal ----
     if not work.empty:
