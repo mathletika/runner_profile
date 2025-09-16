@@ -244,14 +244,26 @@ with tab3:
     work = work.dropna(subset=["WA pont"])
     work = work.sort_values("WA pont", ascending=False)
 
-    # ---- Kártyák boxban ----
+
     # ---- Kártyák boxban ----
     # ---- Kártyák boxban ----
     with st.container():
         st.markdown(
-            "<div style='padding:12px;border:1px solid #ddd;border-radius:8px;margin-bottom:12px;'>",
+            """
+            <style>
+            .wa-box {
+                border: 1px solid #ddd;
+                border-radius: 8px;
+                padding: 12px;
+                margin-bottom: 12px;
+                background-color: #ffffff;
+            }
+            </style>
+            """,
             unsafe_allow_html=True,
         )
+
+        st.markdown("<div class='wa-box'>", unsafe_allow_html=True)
         for i in range(0, len(work), 8):
             cols = st.columns(8, gap="small")
             for j in range(8):
