@@ -54,6 +54,50 @@ EVENT_TO_METERS = {
 }
 
 # -------------------- Helper függvények --------------------
+# === Infóbox stílus + helper ===
+def _inject_info_styles():
+    import streamlit as st
+    st.markdown("""
+    <style>
+      .info-box{
+        background:#f5f7fa;           /* halvány szürke */
+        border:1px solid #e5e7eb;     /* vékony szegély */
+        border-radius:12px;
+        padding:14px 16px;
+        margin:8px 0 16px 0;
+      }
+      .info-title{
+        font-weight:600;
+        color:#111827;
+        margin:0 0 6px 0;
+        font-size:0.95rem;
+      }
+      .info-text{
+        color:#374151;
+        font-size:0.92rem;
+        line-height:1.55;
+        margin:0;
+      }
+    </style>
+    """, unsafe_allow_html=True)
+
+def info_box(title:str, text:str, icon:str="ℹ️"):
+    """Egysoros hívás: szürke infóbox cím + leírás.
+       title: rövid cím
+       text: több sor is lehet ('''...'''), markdown engedélyezett
+       icon: egy emoji a cím elé (pl. ℹ️, 📘, 🧪)"""
+    import streamlit as st
+    _inject_info_styles()
+    st.markdown(
+        f"""
+        <div class="info-box">
+          <div class="info-title">{icon} {title}</div>
+          <div class="info-text">{text}</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
 def time_to_seconds(txt: str) -> float:
     if not isinstance(txt, str) or not txt.strip():
         return np.nan
@@ -180,7 +224,14 @@ with tab1:
 #                 RIEGEL EXPONENS (meghagyva)
 # ===========================================================
 with tab2:
-    st.subheader("Riegel exponens")
+    st.subheader("Riegel-exponens")
+    info_box(
+        "Mi az a Riegel-exponens?",
+        """A **Riegel-exponens** (*k*) a teljesítmény **távtól függő alakulását** írja le: minél nagyobb a *k, azaz a lassulási együttható*, annál jobban romlik az időd 
+        a táv növekedésével. Két ismert eredményből becsüljük *k*-t, majd ezzel jósoljuk meg egy kiválasztott táv 
+        várható idejét (klasszikus képlet: *T₂ = T₁·(D₂/D₁)^k*).""",
+        icon="🧪",
+    )
     st.info("**Ajánlás:** válassz két eredményt (a cél versenytávhoz minél közelebbi számok), majd add meg a cél versenyszámot.")
 
     sel = result_cards_selector(idok, "riegel", max_select=2, ncols=8)
