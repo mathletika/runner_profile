@@ -226,11 +226,16 @@ with tab1:
 with tab2:
     st.subheader("Riegel-exponens")
     info_box(
-        "Mi az a Riegel-exponens?",
-        """A **Riegel-exponens** (*k*) a teljesítmény **távtól függő alakulását** írja le: minél nagyobb a *k, azaz a lassulási együttható*, annál jobban romlik az időd 
-        a táv növekedésével. Két ismert eredményből becsüljük *k*-t, majd ezzel jósoljuk meg egy kiválasztott táv 
-        várható idejét (klasszikus képlet: *T₂ = T₁·(D₂/D₁)^k*).""",
-        icon="🧪",
+        info_box(
+    "Mi az a Riegel-exponens?",
+    """
+    A <b>Riegel-exponens</b> (<i>k</i>) a teljesítmény <b>távhoz képesti alakulását</b> írja le: 
+    minél nagyobb a <b>k értéke</b>, annál gyorsabban romlik az időd a táv növekedésével.<br>
+    Két ismert eredményből becsüljük <i>k</i>-t, majd az együttható alapján <b>jóslunk</b> egy új versenytávon várható időt.
+    """,
+    icon="🧪",
+)
+
     )
     st.info("**Ajánlás:** válassz két eredményt (a cél versenytávhoz minél közelebbi számok), majd add meg a cél versenyszámot.")
 
