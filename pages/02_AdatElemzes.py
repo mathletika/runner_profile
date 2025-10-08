@@ -81,22 +81,27 @@ def _inject_info_styles():
     </style>
     """, unsafe_allow_html=True)
 
-def info_box(title:str, text:str, icon:str="ℹ️"):
-    """Egysoros hívás: szürke infóbox cím + leírás.
-       title: rövid cím
-       text: több sor is lehet ('''...'''), markdown engedélyezett
-       icon: egy emoji a cím elé (pl. ℹ️, 📘, 🧪)"""
-    import streamlit as st
-    _inject_info_styles()
+def info_box(title: str, html_body: str, icon: str = "ℹ️"):
+    st.markdown(
+        """
+        <style>
+        .rp-infobox{background:#f3f4f6;border:1px solid #e5e7eb;border-radius:12px;padding:14px 16px;margin:8px 0;}
+        .rp-infobox h4{margin:0 0 6px 0;font-size:15px;font-weight:700;color:#111827;display:flex;gap:8px;align-items:center;}
+        .rp-infobox p{margin:6px 0 0 0;font-size:13px;line-height:1.5;color:#374151;}
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
     st.markdown(
         f"""
-        <div class="info-box">
-          <div class="info-title">{icon} {title}</div>
-          <div class="info-text">{text}</div>
+        <div class="rp-infobox">
+          <h4>{icon} {title}</h4>
+          <p>{html_body}</p>
         </div>
         """,
         unsafe_allow_html=True,
     )
+
 
 def time_to_seconds(txt: str) -> float:
     if not isinstance(txt, str) or not txt.strip():
@@ -226,16 +231,12 @@ with tab1:
 with tab2:
     st.subheader("Riegel-exponens")
     info_box(
-    "Mi az a Riegel-exponens?",
-    """
-    A <b>Riegel-exponens</b> (<i>k</i>) a teljesítmény <b>távhoz képesti alakulását</b> írja le: 
-    minél nagyobb a <b>k értéke</b>, annál gyorsabban romlik az időd a táv növekedésével.<br>
-    Két ismert eredményből becsüljük <i>k</i>-t, majd az együttható alapján <b>jóslunk</b> egy új versenytávon várható időt.
-    """,
-    icon="🧪",
-)
-
+        "Mi az a Riegel-exponens?",
+        "A <b>Riegel-exponens</b> (<i>k</i>) egyszerűen szólva azt írja le, hogy mennyit lassulunk, ahogy növeljük a versenytávot. "
+        "Két ismert eredményből becsüljük <i>k</i>-t, majd ezzel előrejelzünk egy harmadik választott távra, rávetítve a várható lassulást/gyorsulást"
+        icon="🧪"
     )
+
     st.info("**Ajánlás:** válassz két eredményt (a cél versenytávhoz minél közelebbi számok), majd add meg a cél versenyszámot.")
 
     sel = result_cards_selector(idok, "riegel", max_select=2, ncols=8)
