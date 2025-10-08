@@ -233,7 +233,7 @@ with tab2:
     info_box(
         "Mi az a Riegel-exponens?",
         "A <b>Riegel-exponens</b> (<i>k</i>) egyszerűen szólva azt írja le, hogy mennyit lassulunk, ahogy növeljük a versenytávot. "
-        "Két ismert eredményből becsüljük <i>k</i>-t, majd ezzel előrejelzünk egy harmadik választott távra, rávetítve a várható lassulást/gyorsulást"
+        "Két ismert eredményből becsüljük <i>k</i>-t, majd ezzel előrejelzünk egy harmadik választott távra, rávetítve a várható lassulást/gyorsulást",
         icon="🧪"
     )
 
