@@ -226,7 +226,6 @@ with tab1:
 with tab2:
     st.subheader("Riegel-exponens")
     info_box(
-        info_box(
     "Mi az a Riegel-exponens?",
     """
     A <b>Riegel-exponens</b> (<i>k</i>) a teljesítmény <b>távhoz képesti alakulását</b> írja le: 
