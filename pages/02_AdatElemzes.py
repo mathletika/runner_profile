@@ -177,13 +177,11 @@ with tab1:
     st.subheader("Kritikus sebesség (Critical Speed, CS)")
     info_box(
         "Mi az a Kritikus Sebesség?",
-        "A <b>Kritikus Sebesség</b> (<i>k</i>) lényegében a teljesítmény alapú, valóban érzett küszöb a fenntartható és fenntarthatatlan tartományok között "
-        "Kettő vagy több eredmény alapján számolható, és ebből aztán zónákat, edzésintenzitásokat is lehet képezni."
+        "A <b>Kritikus Sebesség</b> (<i>k</i>) lényegében a teljesítmény alapú, valóban érzett küszöb a fenntartható és fenntarthatatlan tartományok között.<br>"
+        "Kettő vagy több eredmény alapján számolható, és ebből aztán zónákat, edzésintenzitásokat is lehet képezni.<br>"
         "Forrás és ajánlott irodalom: Philip Skiba: Scientific Training for Endurance Athletes",
         icon="🔥"
     )
-
-    st.subheader("Kritikus Sebesség (CS)")
     st.info("**Ajánlás:** 3–20 perc közötti idők használata. **Max. 3** idő jelölhető ki.")
 
     sel = result_cards_selector(idok, "cs", max_select=3, ncols=8)
@@ -241,7 +239,7 @@ with tab2:
     st.subheader("Riegel-exponens")
     info_box(
         "Mi az a Riegel-exponens?",
-        "A <b>Riegel-exponens</b> (<i>k</i>) egyszerűen szólva azt írja le, hogy mennyit lassulunk, ahogy növeljük a versenytávot. "
+        "A <b>Riegel-exponens</b> (<i>k</i>) egyszerűen szólva azt írja le, hogy mennyit lassulunk, ahogy növeljük a versenytávot.<br> "
         "Két ismert eredményből becsüljük <i>k</i>-t, majd ezzel előrejelzünk egy harmadik választott távra, rávetítve a várható lassulást/gyorsulást",
         icon="🧪"
     )
@@ -286,9 +284,9 @@ with tab3:
     st.subheader("WA Pontszám")
     info_box(
         "Mi az a WA Pontszám",
-        "A <b>WA pontszám</b> (<i>másik nevén Spiriev-táblázat</i>) atlétikai versenyszámok eredményeit pontozza aszerint, hogy az adott teljesítmény mennyire közelít a világszintű szinthez."
+        "A <b>WA pontszám</b> (<i>másik nevén Spiriev-táblázat</i>) atlétikai versenyszámok eredményeit pontozza aszerint, hogy az adott teljesítmény mennyire közelít a világszintű szinthez.<br>"
         "A pontszámok segítségével különböző távok és nemek eredményei is összehasonlíthatók, de mindegyik pontszám egy adott versenyszámhoz kötött.",
-        icon="🔥"
+        icon="🏅"
     )
 
     # WA tábla betöltése (.csv)
