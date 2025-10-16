@@ -284,7 +284,7 @@ with tab2:
 # ===========================================================
 with tab3:
     st.subheader("WA Pontszám")
-     info_box(
+    info_box(
         "Mi az a WA Pontszám",
         "A <b>WA pontszám</b> (<i>másik nevén Spiriev-táblázat</i>) atlétikai versenyszámok eredményeit pontozza aszerint, hogy az adott teljesítmény mennyire közelít a világszintű szinthez."
         "A pontszámok segítségével különböző távok és nemek eredményei is összehasonlíthatók, de mindegyik pontszám egy adott versenyszámhoz kötött.",
