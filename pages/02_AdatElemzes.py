@@ -8,7 +8,7 @@ import streamlit as st
 import matplotlib.pyplot as plt
 
 # -------------------- Oldal beállítás --------------------
-st.set_page_config(page_title="AdatElemzés", page_icon="📊", layout="wide")
+st.set_page_config(page_title="Adatelemzés", page_icon="📊", layout="wide")
 
 # -------------------- Események és távok --------------------
 EVENT_TIME_FORMATS = {
@@ -168,12 +168,21 @@ idok = st.session_state.idok.copy()
 gender = st.session_state.get("gender", "Man")
 
 # -------------------- Tabok --------------------
-tab1, tab2, tab3 = st.tabs(["🏁 Kritikus Sebesség", "📐 Riegel exponens", "🏅 WA Score"])
+tab1, tab2, tab3 = st.tabs(["🏁 Kritikus Sebesség", "📐 Riegel-exponens", "🏅 WA Score"])
 
 # ===========================================================
 #                 KRITIKUS SEBESSÉG (meghagyva)
 # ===========================================================
 with tab1:
+    st.subheader("Kritikus sebesség (Critical Speed, CS)")
+    info_box(
+        "Mi az a Kritikus Sebesség?",
+        "A <b>Kritikus Sebesség</b> (<i>k</i>) lényegében a teljesítmény alapú, valóban érzett küszöb a fenntartható és fenntarthatatlan tartományok között "
+        "Kettő vagy több eredmény alapján számolható, és ebből aztán zónákat, edzésintenzitásokat is lehet képezni."
+        "Forrás és ajánlott irodalom: Philip Skiba: Scientific Training for Endurance Athletes",
+        icon="🔥"
+    )
+
     st.subheader("Kritikus Sebesség (CS)")
     st.info("**Ajánlás:** 3–20 perc közötti idők használata. **Max. 3** idő jelölhető ki.")
 
@@ -274,7 +283,13 @@ with tab2:
 #                 WA SCORE (új kód hozzáadva)
 # ===========================================================
 with tab3:
-    st.subheader("WA Score")
+    st.subheader("WA Pontszám")
+     info_box(
+        "Mi az a WA Pontszám",
+        "A <b>WA pontszám</b> (<i>másik nevén Spiriev-táblázat</i>) atlétikai versenyszámok eredményeit pontozza aszerint, hogy az adott teljesítmény mennyire közelít a világszintű szinthez."
+        "A pontszámok segítségével különböző távok és nemek eredményei is összehasonlíthatók, de mindegyik pontszám egy adott versenyszámhoz kötött.",
+        icon="🔥"
+    )
 
     # WA tábla betöltése (.csv)
     candidates = [
