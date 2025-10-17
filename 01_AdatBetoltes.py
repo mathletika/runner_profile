@@ -101,7 +101,7 @@ with c1:
         st.session_state.manual_cards.append({"Táv":"", "Idő":""})
         st.rerun()
 with c2:
-    if st.button("Megadott eredmények hozzáadása az IDŐK táblához", type="primary"):
+    if st.button("Megadott eredmények hozzáadása a táblázathoz", type="primary"):
         rows = []
         for k in st.session_state.manual_cards:
             if k.get("Táv") and k.get("Idő"):
@@ -119,10 +119,10 @@ with c2:
 st.divider()
 
 # ====== IDŐK tábla + törlés ======
-st.subheader("Összesített IDŐK táblázat")
+st.subheader("Összesített táblázat")
 
 if st.session_state.idok.empty:
-    st.info("Még nincs adat a táblában.")
+    st.info("Még nincs adat a táblázatban.")
 else:
     to_show = st.session_state.idok.copy().reset_index().rename(columns={"index": "Sorszám"})
     to_show["Törlés"] = False
@@ -148,5 +148,5 @@ else:
 
 # ====== Gomb a második oldalra ======
 st.divider()
-if st.button("➡️ Tovább az AdatElemzés oldalra"):
+if st.button("➡️ Tovább az Adatelemzés oldalra"):
     st.switch_page("pages/02_AdatElemzes.py")
