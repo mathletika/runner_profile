@@ -176,8 +176,8 @@ tab1, tab2, tab3 = st.tabs(["🏁 Kritikus Sebesség", "📐 Riegel-exponens", "
 with tab1:
     st.subheader("Kritikus sebesség (Critical Speed, CS)")
     info_box(
-        "Mi az a Kritikus Sebesség?",
-        "A <b>Kritikus Sebesség</b> (<i>k</i>) lényegében a teljesítmény alapú, valóban érzett küszöb a fenntartható és fenntarthatatlan tartományok között.<br>"
+        "Mi az a Kritikus sebesség?",
+        "A <b>Kritikus sebesség</b> (<i>k</i>) lényegében a teljesítmény alapú, valóban érzett küszöb a fenntartható és fenntarthatatlan tartományok között.<br>"
         "Kettő vagy több eredmény alapján számolható, és ebből aztán zónákat, edzésintenzitásokat is lehet képezni.<br>"
         "Forrás és ajánlott irodalom: Philip Skiba: Scientific Training for Endurance Athletes",
         icon="🔥"
@@ -281,9 +281,9 @@ with tab2:
 #                 WA SCORE (új kód hozzáadva)
 # ===========================================================
 with tab3:
-    st.subheader("WA Pontszám")
+    st.subheader("WA pontszám")
     info_box(
-        "Mi az a WA Pontszám",
+        "Mi az a WA pontszám",
         "A <b>WA pontszám</b> (<i>másik nevén Spiriev-táblázat</i>) atlétikai versenyszámok eredményeit pontozza aszerint, hogy az adott teljesítmény mennyire közelít a világszintű szinthez.<br>"
         "A pontszámok segítségével különböző távok és nemek eredményei is összehasonlíthatók, de mindegyik pontszám egy adott versenyszámhoz kötött.",
         icon="🏅"
