@@ -338,9 +338,9 @@ with tab1:
         """, unsafe_allow_html=True)
 
         # --- Táblázat sorainak HTML-je ---
-        rows_html = ""
+        rows_html_parts = []
         for z in zones:
-            rows_html += f"""
+            rows_html_parts.append(f"""
             <tr>
               <td>
                 <div class="cs-zonename">{z['zona']}</div>
@@ -348,9 +348,10 @@ with tab1:
               </td>
               <td class="cs-pace">{z['pace_txt']}</td>
             </tr>
-            """
+            """)
+        rows_html = "\n".join(rows_html_parts)
 
-        # --- Kártya HTML-je ---
+        # --- Kártya HTML-je (EGYBEN küldjük ki Streamlitnek) ---
         card_html = f"""
         <div class="cs-card">
           <div class="cs-head">Edzés zónák a Kritikus Sebesség alapján</div>
@@ -369,6 +370,7 @@ with tab1:
         """
 
         st.markdown(card_html, unsafe_allow_html=True)
+
 
 
 # ===========================================================
