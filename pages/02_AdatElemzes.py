@@ -162,7 +162,7 @@ def result_cards_selector(df, key_prefix, max_select=None, ncols=8):
 
 # -------------------- Adatok --------------------
 if "idok" not in st.session_state or st.session_state.idok.empty:
-    st.warning("Nincs adat az `idok` táblában.")
+    st.warning("Nincsenek megadva időeredmények.")
     st.stop()
 idok = st.session_state.idok.copy()
 gender = st.session_state.get("gender", "Man")
@@ -231,6 +231,145 @@ with tab1:
             "dprime": dprime,
             "plot_png": buf.getvalue(),
         }
+
+        # --- Zóna kalkuláció és zóna-kártya renderelés ---
+
+        cs_sec_per_km = pace  # mp/km float tempó a kritikus sebességhez
+
+        def zone_interval(f_hi, f_lo):
+            """
+            f_hi, f_lo pl. 1.24 és 1.15
+            Lassabb tempó (magasabb mp/km) = felső érték.
+            Visszatér: ("3:45", "3:30") jellegű stringpár.
+            """
+            hi = cs_sec_per_km * f_hi
+            lo = cs_sec_per_km * f_lo
+            return seconds_to_mmss(hi), seconds_to_mmss(lo)
+
+        zones = [
+            {
+                "zona": "Z1 Regeneráció",
+                "range": ">124%",
+                "pace_txt": f"{seconds_to_mmss(cs_sec_per_km * 1.24)}+",
+            },
+            {
+                "zona": "Z2 Állóképesség",
+                "range": "124–115%",
+                "pace_txt": " - ".join(zone_interval(1.24, 1.15)),
+            },
+            {
+                "zona": "Z3 Tempó",
+                "range": "114–105%",
+                "pace_txt": " - ".join(zone_interval(1.14, 1.05)),
+            },
+            {
+                "zona": "Z4 Threshold",
+                "range": "104–95%",
+                "pace_txt": " - ".join(zone_interval(1.04, 0.95)),
+            },
+            {
+                "zona": "Z5 VO₂max",
+                "range": "94–84%",
+                "pace_txt": " - ".join(zone_interval(0.94, 0.84)),
+            },
+            {
+                "zona": "Z6 Anaerob",
+                "range": "<84%",
+                "pace_txt": f"{seconds_to_mmss(cs_sec_per_km * 0.84)}-",
+            },
+        ]
+
+        # --- Stílus a kártyához (egyszer beszúrjuk itt) ---
+        st.markdown("""
+        <style>
+        .cs-card {
+            background:#ffffff;
+            border:1px solid #e5e7eb;
+            border-radius:12px;
+            padding:16px 20px;
+            margin-top:16px;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            box-shadow:0 8px 24px -6px rgba(0,0,0,0.08);
+        }
+        .cs-head {
+            font-size:14px;
+            font-weight:600;
+            color:#111827;
+            display:flex;
+            align-items:center;
+            margin-bottom:10px;
+        }
+        .cs-table {
+            width:100%;
+            border-collapse:collapse;
+        }
+        .cs-table th {
+            text-align:left;
+            font-size:12px;
+            font-weight:600;
+            color:#6b7280;
+            padding:6px 8px;
+            border-bottom:1px solid #e5e7eb;
+            white-space:nowrap;
+        }
+        .cs-table td {
+            font-size:13px;
+            color:#111827;
+            padding:8px 8px;
+            border-bottom:1px solid #f3f4f6;
+            vertical-align:top;
+            white-space:nowrap;
+        }
+        .cs-zonename {
+            font-weight:600;
+            color:#111827;
+        }
+        .cs-range {
+            color:#4b5563;
+            font-size:12px;
+        }
+        .cs-pace {
+            font-feature-settings:'tnum' 1,'ss01' 1;
+            font-variant-numeric:tabular-nums;
+            font-weight:600;
+            color:#111827;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+
+        # --- Táblázat sorainak HTML-je ---
+        rows_html = ""
+        for z in zones:
+            rows_html += f"""
+            <tr>
+              <td>
+                <div class="cs-zonename">{z['zona']}</div>
+                <div class="cs-range">{z['range']}</div>
+              </td>
+              <td class="cs-pace">{z['pace_txt']}</td>
+            </tr>
+            """
+
+        # --- Kártya HTML-je ---
+        card_html = f"""
+        <div class="cs-card">
+          <div class="cs-head">Edzés zónák a Kritikus Sebesség alapján</div>
+          <table class="cs-table">
+            <thead>
+              <tr>
+                <th>Zóna</th>
+                <th>Tempóérték</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows_html}
+            </tbody>
+          </table>
+        </div>
+        """
+
+        st.markdown(card_html, unsafe_allow_html=True)
+
 
 # ===========================================================
 #                 RIEGEL EXPONENS (meghagyva)
