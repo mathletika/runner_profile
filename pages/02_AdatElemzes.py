@@ -413,7 +413,7 @@ with tab1:
         """
 
         # itt NEM st.markdown, hanem egy valódi HTML iframe render
-        components.html(card_html, height=400, scrolling=False)
+        components.html(card_html, height=440, scrolling=False)
 
 # ===========================================================
 #                 RIEGEL EXPONENS (meghagyva)
