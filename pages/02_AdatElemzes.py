@@ -338,28 +338,71 @@ with tab1:
         """, unsafe_allow_html=True)
 
         # --- Táblázat sorainak HTML-je ---
+        import streamlit.components.v1 as components
+
+        # --- HTML sorok összeállítása ---
         rows_html_parts = []
         for z in zones:
             rows_html_parts.append(f"""
             <tr>
-              <td>
-                <div class="cs-zonename">{z['zona']}</div>
-                <div class="cs-range">{z['range']}</div>
+              <td style="padding:8px 8px; border-bottom:1px solid #f3f4f6; vertical-align:top; white-space:nowrap;">
+                <div style="font-weight:600; color:#111827;">{z['zona']}</div>
+                <div style="color:#4b5563; font-size:12px;">{z['range']}</div>
               </td>
-              <td class="cs-pace">{z['pace_txt']}</td>
+              <td style="padding:8px 8px; border-bottom:1px solid #f3f4f6; vertical-align:top; white-space:nowrap;
+                         font-feature-settings:'tnum' 1,'ss01' 1; font-variant-numeric:tabular-nums;
+                         font-weight:600; color:#111827;">
+                {z['pace_txt']}
+              </td>
             </tr>
             """)
         rows_html = "\n".join(rows_html_parts)
 
-        # --- Kártya HTML-je (EGYBEN küldjük ki Streamlitnek) ---
+        # --- az egész kártya komplett, inline stílussal (nem külső CSS-re támaszkodunk) ---
         card_html = f"""
-        <div class="cs-card">
-          <div class="cs-head">Edzés zónák a Kritikus Sebesség alapján</div>
-          <table class="cs-table">
+        <div style="
+            background:#ffffff;
+            border:1px solid #e5e7eb;
+            border-radius:12px;
+            padding:16px 20px;
+            margin-top:16px;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            box-shadow:0 8px 24px -6px rgba(0,0,0,0.08);
+        ">
+          <div style="
+              font-size:14px;
+              font-weight:600;
+              color:#111827;
+              margin-bottom:10px;
+          ">
+            Edzés zónák a Kritikus Sebesség alapján
+          </div>
+
+          <table style="width:100%; border-collapse:collapse;">
             <thead>
               <tr>
-                <th>Zóna</th>
-                <th>Tempóérték</th>
+                <th style="
+                    text-align:left;
+                    font-size:12px;
+                    font-weight:600;
+                    color:#6b7280;
+                    padding:6px 8px;
+                    border-bottom:1px solid #e5e7eb;
+                    white-space:nowrap;
+                ">
+                  Zóna
+                </th>
+                <th style="
+                    text-align:left;
+                    font-size:12px;
+                    font-weight:600;
+                    color:#6b7280;
+                    padding:6px 8px;
+                    border-bottom:1px solid #e5e7eb;
+                    white-space:nowrap;
+                ">
+                  Tempóérték
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -369,9 +412,8 @@ with tab1:
         </div>
         """
 
-        st.markdown(card_html, unsafe_allow_html=True)
-
-
+        # itt NEM st.markdown, hanem egy valódi HTML iframe render
+        components.html(card_html, height=400, scrolling=False)
 
 # ===========================================================
 #                 RIEGEL EXPONENS (meghagyva)
